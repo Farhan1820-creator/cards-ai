@@ -107,7 +107,7 @@ export function MyCardsClient({ cards: initialCards, isAdmin = false, currentUse
 
       {/* ── Floating bulk action bar ── */}
       {selectMode && selectedIds.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-white">
           <div className="flex items-center gap-3 bg-white border border-border rounded-2xl shadow-xl px-5 py-3">
             <span className="text-sm font-medium text-foreground">
               {selectedIds.size} {selectedIds.size === 1 ? "card" : "cards"} selected
@@ -124,8 +124,8 @@ export function MyCardsClient({ cards: initialCards, isAdmin = false, currentUse
       )}
 
       {/* ── Bulk delete confirm ── */}
-      <AlertDialog open={bulkConfirm} onOpenChange={setBulkConfirm}>
-        <AlertDialogContent>
+      <AlertDialog open={bulkConfirm} onOpenChange={setBulkConfirm} >
+        <AlertDialogContent className="bg-white">
           <AlertDialogHeader>
             <AlertDialogTitle>
               Delete {selectedIds.size} {selectedIds.size === 1 ? "card" : "cards"}?
@@ -148,7 +148,7 @@ export function MyCardsClient({ cards: initialCards, isAdmin = false, currentUse
 
       {/* ── Single delete confirm ── */}
       <AlertDialog open={!!confirmDeleteId} onOpenChange={(v) => { if (!v) setConfirmDeleteId(null); }}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-white">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this card?</AlertDialogTitle>
             <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
