@@ -52,8 +52,10 @@ export function useMyCards(initialCards: CardItem[], isAdmin = false, initialUse
   // ── Filtering — full list pe, pagination se pehle ──────────────────────
   const filteredCards = useMemo(() => {
     return cards.filter((card) => {
-      if (filters.search && !card.recipientName?.toLowerCase().includes(filters.search.toLowerCase())) return false;
-      if (filters.cardType && card.cardType?.toLowerCase() !== filters.cardType.toLowerCase()) return false;
+if (filters.search && 
+  !card.recipientName?.toLowerCase().includes(filters.search.toLowerCase()) &&
+  !card.cardType?.toLowerCase().includes(filters.search.toLowerCase())
+) return false;      if (filters.cardType && card.cardType?.toLowerCase() !== filters.cardType.toLowerCase()) return false;
       if (filters.user && card.createdByEmail !== filters.user) return false;
       if (filters.dateFrom && card.createdAtRaw < filters.dateFrom) return false;
       if (filters.dateTo && card.createdAtRaw > filters.dateTo) return false;

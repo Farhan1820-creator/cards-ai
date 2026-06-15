@@ -73,7 +73,7 @@ export function CardFilters({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <input
             type="text"
-            placeholder="Search cards by name..."
+            placeholder="Search cards by name & category..."
             value={filters.search}
             onChange={(e) => update("search", e.target.value)}
             className="w-full pl-9 pr-3 h-9 text-sm rounded-xl border border-border bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
