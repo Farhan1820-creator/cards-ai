@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { ChevronLeft, ChevronRight, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +12,7 @@ import { EditCardModal, type EditableCard } from "./EditCardModel";
 import { BulkDeleteOverlay } from "./BulkDeleteOverlay";
 import { useMyCards, type CardItem } from "./hooks/useMyCards";
 import { CardGrid } from "./CardGrid";
-import { CardFilters, type CardFilters as CardFiltersType } from "./CardFilters";
+import { CardFilters } from "./CardFilters";
 
 
 interface MyCardsClientProps {

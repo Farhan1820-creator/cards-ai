@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { downloadImage } from "@/lib/download-image";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 
 export interface CardItem {
