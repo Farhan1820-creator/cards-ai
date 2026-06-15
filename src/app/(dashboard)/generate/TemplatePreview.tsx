@@ -1,0 +1,302 @@
+"use client";
+
+import { ImageIcon } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+import { useCanvasCoords, type CanvasElement } from "./hooks/useCanvasCoords";
+import { PhotoOverlayButton }                   from "./PhotoOverlayButton";
+import { PanZoomAdjuster, type PhotoTransform } from "./PanZoomAdjuster";
+import type { Template }                        from "./SidebarPanels/TemplateSidebarPanel/components/TemplateGrid";
+
+const CANVAS_W = 1080;
+const CANVAS_H = 1350;
+
+const DEFAULT_OVERLAY = {
+  photo:         { x: 540, y: 700,  r: 250 },
+  recipientName: { x: 540, y: 1025, fontSize: 40 },
+  message:       { x: 540, y: 1100, fontSize: 28 },
+};
+
+export interface TemplatePreviewProps {
+  template:           Template | null;
+  recipientName:      string;
+  message:            string;
+  photoUrl:           string | null;
+  isGenerated:        boolean;
+  isLoading:          boolean;
+  nameColor?:         string;
+  messageColor?:      string;
+  isEditing?:         boolean;
+  onPreviewReady?:    (dataUrl: string) => void;
+  onRemovePhoto?:     () => void;
+  photoTransform?:    PhotoTransform;
+  onTransformChange?: (t: PhotoTransform) => void;
+  overlayConfig?:     { photo: { x: number; y: number; r: number }; recipientName: { x: number; y: number; fontSize: number }; message: { x: number; y: number; fontSize: number } };
+}
+
+export function TemplatePreview({
+  isEditing = false,
+  template, recipientName, message, photoUrl,
+  isGenerated, isLoading,
+  nameColor = "", messageColor = "",
+  onPreviewReady,
+  onRemovePhoto: _onRemovePhoto,
+  photoTransform: externalTransform,
+  onTransformChange,
+  overlayConfig,
+}: TemplatePreviewProps) {
+  const canvasRef    = useRef<HTMLCanvasElement>(null);
+  const [previewUrl,     setPreviewUrl]     = useState<string | null>(null);
+  const [cropOpen,       setCropOpen]       = useState(false);
+  const [photoTransform, setPhotoTransform] = useState<PhotoTransform>(
+    externalTransform ?? { scale: 1, offsetX: 0, offsetY: 0 },
+  );
+  const confirmedUrl = useRef<string | null>(null);
+
+  // Resolve config from prop or default
+const config = useMemo(
+  () => overlayConfig ?? DEFAULT_OVERLAY,
+  [overlayConfig]
+);
+  const photoX = config.photo.x;
+  const photoY = config.photo.y;
+  const photoR = config.photo.r;
+
+  // Dynamic CANVAS_ELEMENTS based on config
+  const elements = useMemo<CanvasElement[]>(() => [
+    { key: "photo", cx: photoX, cy: photoY, r: photoR },
+  ], [photoX, photoY, photoR]);
+
+  const { ref: previewRef, domElements } = useCanvasCoords({
+    canvasW: CANVAS_W,
+    canvasH: CANVAS_H,
+    elements,
+  });
+
+  // Sync external transform (controlled/edit mode)
+  useEffect(() => {
+    if (externalTransform) setPhotoTransform(externalTransform);
+  }, [externalTransform]);
+
+  // Reset when template deselected
+  useEffect(() => {
+    if (!template) {
+      setPreviewUrl(null);
+      setCropOpen(false);
+      setPhotoTransform({ scale: 1, offsetX: 0, offsetY: 0 });
+      confirmedUrl.current = null;
+      onPreviewReady?.("");
+    }
+  }, [template]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Open adjuster on fresh local photo upload
+  useEffect(() => {
+    if (photoUrl && photoUrl !== confirmedUrl.current) {
+      if (photoUrl.startsWith("http") || isEditing) {
+        confirmedUrl.current = photoUrl;
+        setCropOpen(false);
+      } else {
+        setPhotoTransform({ scale: 1, offsetX: 0, offsetY: 0 });
+        setCropOpen(true);
+      }
+    }
+    if (!photoUrl) {
+      setCropOpen(false);
+      confirmedUrl.current = null;
+    }
+  }, [photoUrl, isEditing]);
+
+  const handleConfirm = useCallback((t: PhotoTransform) => {
+    setPhotoTransform(t);
+    confirmedUrl.current = photoUrl;
+    setCropOpen(false);
+    onTransformChange?.(t);
+  }, [photoUrl, onTransformChange]);
+
+  const handleCloseCrop = useCallback(() => setCropOpen(false), []);
+
+  // Canvas render
+  useEffect(() => {
+    if (!template) return;
+    const canvas = canvasRef.current; if (!canvas) return;
+    const ctx    = canvas.getContext("2d"); if (!ctx) return;
+    let cancelled = false;
+
+    const loadImg = (src: string) =>
+      new Promise<HTMLImageElement>((res, rej) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload  = () => res(img);
+        img.onerror = rej;
+        img.src     = src;
+      });
+
+   const render = async () => {
+  try {
+    canvas.width  = CANVAS_W;
+    canvas.height = CANVAS_H;
+
+    const bg = await loadImg(template.thumbnail);
+    if (cancelled) return;
+    ctx.drawImage(bg, 0, 0, CANVAS_W, CANVAS_H);
+
+    // ── Photo ─────────────────────────────────────────
+    if (photoUrl && !cropOpen) {
+      const img  = await loadImg(photoUrl);
+      if (cancelled) return;
+      const D    = photoR * 2;
+      const base = Math.max(D / img.naturalWidth, D / img.naturalHeight);
+      const fs   = base * photoTransform.scale;
+      const sw   = img.naturalWidth  * fs;
+      const sh   = img.naturalHeight * fs;
+      const dx   = photoX - sw / 2 + photoTransform.offsetX;
+      const dy   = photoY - sh / 2 + photoTransform.offsetY;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(photoX, photoY, photoR, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.drawImage(img, dx, dy, sw, sh);
+      ctx.restore();
+    }
+
+    // ── Recipient Name ─────────────────────────────────
+    if (recipientName.trim()) {
+      ctx.font         = `bold ${config.recipientName.fontSize}px poppins,sans-serif`;
+      ctx.fillStyle    = nameColor || "#fff";
+      ctx.textAlign    = "center";
+      ctx.textBaseline = "middle";
+      const nameLh = config.recipientName.fontSize * 1.3;
+      let nameLine = "", nameY = config.recipientName.y;
+      for (const word of recipientName.split(" ")) {
+        const test = nameLine + word + " ";
+        if (ctx.measureText(test).width > 900 && nameLine) {
+          ctx.fillText(nameLine.trim(), config.recipientName.x, nameY);
+          nameLine = word + " ";
+          nameY   += nameLh;
+        } else {
+          nameLine = test;
+        }
+      }
+      ctx.fillText(nameLine.trim(), config.recipientName.x, nameY);
+    }
+
+    // ── Message ────────────────────────────────────────
+    if (message.trim()) {
+      ctx.font      = `${config.message.fontSize}px Arial,sans-serif`;
+      ctx.fillStyle = messageColor || "#fff";
+      ctx.textAlign = "center";
+      const msgLh = config.message.fontSize * 1.4;
+      let msgLine = "", msgY = config.message.y;
+      for (const word of message.split(" ")) {
+        const test = msgLine + word + " ";
+        if (ctx.measureText(test).width > 900 && msgLine) {
+          ctx.fillText(msgLine.trim(), config.message.x, msgY);
+          msgLine = word + " ";
+          msgY   += msgLh;
+        } else {
+          msgLine = test;
+        }
+      }
+      ctx.fillText(msgLine.trim(), config.message.x, msgY);
+    }
+
+    if (cancelled) return;
+    const dataUrl = canvas.toDataURL("image/png");
+    setPreviewUrl(dataUrl);
+    onPreviewReady?.(dataUrl);
+  } catch (err) {
+    console.error("Preview render error:", err);
+  }
+};
+  
+    render();
+    return () => { cancelled = true; };
+}, [
+  template,
+  recipientName,
+  message,
+  photoUrl,
+  photoTransform,
+  cropOpen,
+  nameColor,
+  messageColor,
+  onPreviewReady,
+  photoX, photoY, photoR,   // ← config.photo.x/y/r ki jagah yeh
+  config.recipientName.x, config.recipientName.y, config.recipientName.fontSize,
+  config.message.x, config.message.y, config.message.fontSize,
+]);
+
+  const photoCircle = domElements.get("photo");
+
+  return (
+    <div className="space-y-2">
+      <div className={isLoading ? "neon-loading" : ""}>
+        <div ref={previewRef} className="relative z-[2] aspect-[4/5] w-full overflow-hidden rounded-lg border border-border bg-muted/30">
+
+          {isLoading ? (
+            <div className="flex h-full flex-col items-center justify-center gap-3">
+              <p className="text-xs text-muted-foreground">Generating…</p>
+            </div>
+
+          ) : previewUrl ? (
+            <div className="relative h-full w-full">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={previewUrl}
+                alt="Card preview"
+                className="h-full w-full object-cover"
+              />
+
+              {photoUrl && photoCircle && (
+                <PhotoOverlayButton
+                  domElement={photoCircle}
+                  onClick={() => setCropOpen(true)}
+                />
+              )}
+
+              {isGenerated && (
+                <div className="absolute bottom-2.5 right-2.5 rounded-full bg-black px-2.5 py-0.5 text-[10px] font-medium text-primary-foreground">
+                  Generated
+                </div>
+              )}
+            </div>
+
+          ) : (
+            <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
+                <ImageIcon className="h-7 w-7" />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-medium">Select a template</p>
+                <p className="mt-0.5 text-xs">Choose a template and fill in details to preview</p>
+              </div>
+            </div>
+          )}
+
+          {cropOpen && photoUrl && (
+            <div style={{
+              position: "absolute", inset: 0,
+              background: "rgba(0,0,0,0.88)", zIndex: 20,
+              display: "flex", flexDirection: "column",
+              alignItems: "center", justifyContent: "center",
+              overflowY: "auto", padding: "16px 0",
+            }}>
+              <p style={{ color: "#fff", fontWeight: 700, fontSize: 14, marginBottom: 16 }}>
+                Adjust Photo
+              </p>
+              <PanZoomAdjuster
+                photoUrl={photoUrl}
+                photoR={photoR}
+                initialTransform={photoTransform}
+                onConfirm={handleConfirm}
+                onClose={handleCloseCrop}
+              />
+            </div>
+          )}
+
+        </div>
+      </div>
+      <canvas ref={canvasRef} className="hidden" />
+    </div>
+  );
+}
