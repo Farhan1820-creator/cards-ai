@@ -19,10 +19,11 @@ const adminNavItems = [
 ];
 
 interface SidebarUser {
-  name:    string | null;
-  email:   string;
-  image:   string | null;
-  isAdmin?: boolean;
+  id: string;               
+  name: string | null;
+  email: string | null;
+  image: string | null;
+  isAdmin: boolean;
 }
 
 function Avatar({
@@ -37,8 +38,7 @@ function Avatar({
     ? name.trim().split(/\s+/).map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : "?";
   const cls = size === "sm" ? "h-7 w-7 text-[10px]" : "h-9 w-9 text-xs";
-  const tooltip = [name, email].filter(Boolean).join("\n");
-
+const tooltip = [name, email].filter(Boolean).join("\n");
   if (image) {
     return (
       <img
@@ -71,7 +71,9 @@ function UserPopover({ user, onClose }: { user: SidebarUser; onClose: () => void
             <Avatar image={user.image} name={user.name} email={user.email} />
             <div className="min-w-0">
               <p className="text-sm font-semibold text-gray-900 truncate">{user.name ?? "User"}</p>
-              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+<p className="text-xs text-muted-foreground truncate">
+  {user.email ?? "No email"}
+</p>
             </div>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 flex-shrink-0">

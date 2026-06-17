@@ -56,45 +56,72 @@ export function EditCardModal({ card, open, onClose, onSaved }: EditCardModalPro
     }
   }, [card]);
 
-  const handleSave = useCallback(async () => {
-    if (!card) return;
-    setIsSaving(true);
-    try {
-      const res = await fetch(`/api/cards/${card.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          recipientName,
-          cardType: card.cardType,
-          // Only send new image if canvas produced one (future enhancement)
-        }),
-      });
-      const data = await res.json();
-      if (!data.success) throw new Error("Save failed");
-      toast.success("Card updated!");
-      onSaved({
-        ...card,
-        recipientName,
-        imageUrl: data.card.imageUrl,
-      });
-      onClose();
-    } catch {
-      toast.error("Could not save changes");
-    } finally {
-      setIsSaving(false);
-    }
-  }, [card, recipientName, onSaved, onClose]);
+ const handleSave = useCallback(async () => {
+  if (!card) return;
 
-  const handleDownload = useCallback(() => {
-    if (!previewUrl) return;
+  setIsSaving(true);
+
+  // instant UX feedback
+  toast.loading("Saving changes...");
+
+  try {
+    const res = await fetch(`/api/cards/${card.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        recipientName,
+        message,
+        cardType: card.cardType,
+      }),
+    });
+
+    const data = await res.json();
+    if (!data.success) throw new Error();
+
+    onSaved({
+      ...card,
+      recipientName,
+      imageUrl: data.card.imageUrl,
+    });
+
+    toast.success("Updated!");
+    onClose();
+  } catch {
+    toast.error("Save failed");
+  } finally {
+    setIsSaving(false);
+  }
+}, [card, recipientName, message, onClose, onSaved]);
+
+const handleDownload = useCallback(async () => {
+  if (!previewUrl) return;
+
+  try {
+    toast.loading("Preparing download...");
+
+    // force UI frame release
+    await new Promise(requestAnimationFrame);
+
+    const res = await fetch(previewUrl, { cache: "force-cache" });
+    const blob = await res.blob();
+
+    const url = URL.createObjectURL(blob);
+
     const a = document.createElement("a");
-    a.href = previewUrl;
-    a.download = `${recipientName || "card"}-${card?.cardType ?? "card"}.png`;
+    a.href = url;
+    a.download = `${recipientName || "card"}-${card?.cardType}.png`;
+
     document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
+    a.remove();
+
+    URL.revokeObjectURL(url);
+
     toast.success("Downloaded!");
-  }, [previewUrl, recipientName, card]);
+  } catch (err) {
+    toast.error("Download failed");
+  }
+}, [previewUrl, recipientName, card]);
 
   if (!card) return null;
 

@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { uploadTemplateCard } from "@/lib/upload-template-card";
 import { createCard } from "@/lib/actions/cards";
-import { requireUser } from "@/lib/auth";
+import { requireUser } from "@/lib/require-user";
 
 export async function POST(req: Request) {
   const user = await requireUser();

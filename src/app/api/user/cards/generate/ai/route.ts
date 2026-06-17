@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { composeImagePrompt } from "@/lib/prompt-composer";
 import { generateImage } from "@/lib/huggingface";
 import { createCard } from "@/lib/actions/cards";
-import { requireUser } from "@/lib/auth";
+import { requireUser } from "@/lib/require-user";
 import { uploadBase64Image } from "@/lib/cloudinary";
 
 export async function POST(request: NextRequest) {

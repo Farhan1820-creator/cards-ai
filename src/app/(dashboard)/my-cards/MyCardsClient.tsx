@@ -8,7 +8,6 @@ import {
   AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { EditCardModal, type EditableCard } from "./EditCardModel";
 import { BulkDeleteOverlay } from "./BulkDeleteOverlay";
 import { useMyCards, type CardItem } from "./hooks/useMyCards";
 import { CardGrid } from "./CardGrid";
@@ -29,7 +28,7 @@ export function MyCardsClient({ cards: initialCards, isAdmin = false, currentUse
     confirmDeleteId,
     setConfirmDeleteId,
     page, setPage, totalPages,
-    handleDelete, handleDownload, handleEdit, handleCardUpdate,
+    handleDelete, handleDownload, handleEdit,
     selectMode, selectedIds,
     enterSelectMode, exitSelectMode,
     toggleSelect, selectAll, isAllSelected,
@@ -41,9 +40,6 @@ export function MyCardsClient({ cards: initialCards, isAdmin = false, currentUse
   } = useMyCards(initialCards, isAdmin, initialUser); // 👈 initialUser pass karo
   
  
-
-  const [editingCard, setEditingCard] = useState<EditableCard | null>(null);
-  const [editOpen,    setEditOpen]    = useState(false);
   const [bulkConfirm, setBulkConfirm] = useState(false);
 
 
@@ -169,14 +165,6 @@ export function MyCardsClient({ cards: initialCards, isAdmin = false, currentUse
       <BulkDeleteOverlay
         phase={deletionPhase}
         count={selectedIds.size > 0 ? selectedIds.size : 1}
-      />
-
-      {/* ── Edit Modal ── */}
-      <EditCardModal
-        card={editingCard}
-        open={editOpen}
-        onClose={() => { setEditOpen(false); setEditingCard(null); }}
-        onSaved={(updated) => { handleCardUpdate(updated); setEditOpen(false); }}
       />
     </>
   );

@@ -18,7 +18,7 @@ export function ModeSelector({ mode, onModeChange }: ModeSelectorProps) {
           className={cn(
             "flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-all duration-200",
             mode === "template"
-              ? "bg-background text-foreground shadow-sm"
+              ? "bg-background text-primary-foreground shadow-sm"
               : "text-muted-light hover:text-muted"
           )}
         >
@@ -31,7 +31,7 @@ export function ModeSelector({ mode, onModeChange }: ModeSelectorProps) {
           className={cn(
             "flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-all duration-200",
             mode === "ai"
-              ? "bg-background text-foreground shadow-sm"
+              ? "bg-primary text-primary-foreground shadow-sm"
               : "text-muted-light hover:text-muted"
           )}
         >

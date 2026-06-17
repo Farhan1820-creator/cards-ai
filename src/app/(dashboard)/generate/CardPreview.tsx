@@ -1,6 +1,5 @@
 import { cn } from "@/lib/utils";
 import { ImageIcon } from "lucide-react";
-import Image from "next/image";
 
 interface CardPreviewProps {
   imageUrl?: string;

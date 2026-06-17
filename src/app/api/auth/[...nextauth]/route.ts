@@ -1,10 +1,11 @@
 import NextAuth, { type AuthOptions } from "next-auth";
 import Google from "next-auth/providers/google";
+import Credentials from "next-auth/providers/credentials";
+import bcrypt from "bcrypt";
+
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import Credentials from "next-auth/providers/credentials";
-import bcrypt from "bcrypt";
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -12,6 +13,7 @@ export const authOptions: AuthOptions = {
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
+
     Credentials({
       name: "Email & Password",
       credentials: {
@@ -66,6 +68,7 @@ export const authOptions: AuthOptions = {
     async signIn({ user, account }) {
       if (!user.email) return false;
 
+      // Google signup handling
       if (account?.provider !== "credentials") {
         const [existingUser] = await db
           .select()
@@ -89,46 +92,25 @@ export const authOptions: AuthOptions = {
       return true;
     },
 
-    async jwt({ token, user, trigger, session }) {
-      // ── Login pe user se inject karo ──────────────────
+    // ✅ CLEAN JWT (NO DB CALLS)
+    async jwt({ token, user }) {
       if (user) {
+        token.id = user.id;
         token.isAdmin = user.isAdmin ?? false;
         token.isBanned = user.isBanned ?? false;
-        token.id = user.id;
-      }
-
-      // ── DB se fresh data lo har baar token refresh pe ─
-      // (admin status change ho to token stale na rahe)
-      if (trigger === "update" || (!user && token.id)) {
-        const [freshUser] = await db
-          .select()
-          .from(users)
-          .where(eq(users.id, token.id as string));
-
-        if (freshUser) {
-          token.isAdmin = freshUser.isAdmin;
-          token.isBanned = freshUser.isBanned;
-        }
       }
 
       return token;
     },
 
-async session({ session, token }) {
-  if (session.user) {
-    session.user.id       = token.id as string;
-    session.user.isAdmin  = token.isAdmin;
-    session.user.isBanned = token.isBanned;
-  }
-  return session;
-},
-
-    // ── Login ke baad role based redirect ─────────────
-    async redirect({ url, baseUrl }) {
-      // callback URL already set hai (e.g. ?callbackUrl=...)
-      if (url.startsWith(baseUrl)) return url;
-      if (url.startsWith("/")) return `${baseUrl}${url}`;
-      return baseUrl;
+    // session mapping only
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.id as string;
+        session.user.isAdmin = token.isAdmin as boolean;
+        session.user.isBanned = token.isBanned as boolean;
+      }
+      return session;
     },
   },
 

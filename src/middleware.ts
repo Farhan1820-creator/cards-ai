@@ -4,28 +4,28 @@ import { NextResponse } from "next/server";
 export default withAuth(
   function middleware(req) {
     const token = req.nextauth.token;
-    const { pathname } = req.nextUrl;
+    const pathname = req.nextUrl.pathname;
 
-    // ── Banned user → har jagah se login pe bhejo ────────
+    // 🚫 banned users everywhere blocked
     if (token?.isBanned) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
 
-    // ── Admin routes → non-admin ko dashboard pe bhejo ──
-    if (
-      pathname.startsWith("/admin") ||
-      pathname.startsWith("/api/admin")
-    ) {
-      if (!token?.isAdmin) {
-        return NextResponse.redirect(new URL("/dashboard", req.url));
-      }
+    // 🔐 admin-only routes
+    const adminOnlyRoutes = ["/users"];
+
+    const isAdminRoute = adminOnlyRoutes.some((route) =>
+      pathname.startsWith(route)
+    );
+
+    if (isAdminRoute && !token?.isAdmin) {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
     }
 
     return NextResponse.next();
   },
   {
     callbacks: {
-      // token nahi → withAuth khud /login pe redirect kar deta hai
       authorized: ({ token }) => !!token,
     },
     pages: {
@@ -36,19 +36,16 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    // user pages
     "/dashboard/:path*",
     "/my-cards/:path*",
     "/templates/:path*",
     "/create/:path*",
 
-    // user API
+    "/users/:path*",
+
     "/api/user/:path*",
     "/api/generate/:path*",
     "/api/templates/:path*",
-
-    // admin pages + API
-    "/admin/:path*",
     "/api/admin/:path*",
   ],
 };

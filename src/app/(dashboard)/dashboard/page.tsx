@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/auth";
+import { requireUser } from "@/lib/require-user";
 import { db } from "@/db";
 import { cards, templates, users } from "@/db/schema";
 import { eq, desc, sql } from "drizzle-orm";
