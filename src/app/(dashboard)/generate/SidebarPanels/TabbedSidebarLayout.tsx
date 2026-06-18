@@ -14,24 +14,27 @@ interface TabbedSidebarLayoutProps {
   tabs: SidebarTabDef[];
 }
 
-const SWIPE_CLOSE_THRESHOLD = 70; // px, neechay swipe karne par overlay close
-const ANIMATION_MS = 280;
-const SHEET_TRANSITION = "transform 280ms cubic-bezier(0.32, 0.72, 0, 1)";
-const BACKDROP_TRANSITION = "opacity 280ms ease";
+const SWIPE_CLOSE_THRESHOLD = 120;
+const SWIPE_VELOCITY_THRESHOLD = 0.5; // px/ms — fast flick se bhi close ho
+const ANIMATION_MS = 320;
+const SHEET_TRANSITION = "transform 320ms cubic-bezier(0.25, 0.46, 0.45, 0.94)";
+const BACKDROP_TRANSITION = "opacity 320ms ease";
 
 export function TabbedSidebarLayout({ tabs }: TabbedSidebarLayoutProps) {
   const [activeTabId, setActiveTabId] = useState(tabs[0]?.id ?? "");
-  const [mobileOpen, setMobileOpen] = useState(false); // mounted ya nahi
-  const [isVisible, setIsVisible] = useState(false);   // slid-up (open) vs slid-down (closed) position
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
 
   const touchStartY = useRef<number | null>(null);
+  const touchStartTime = useRef<number | null>(null); // velocity ke liye
   const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const scrollableRef = useRef<HTMLDivElement>(null);
 
   const activeTab = tabs.find((t) => t.id === activeTabId) ?? tabs[0];
 
-  // Mount hone ke baad next frame me slide-up trigger karo (entrance animation)
   useEffect(() => {
     if (!mobileOpen) return;
     const raf = requestAnimationFrame(() => setIsVisible(true));
@@ -47,7 +50,7 @@ export function TabbedSidebarLayout({ tabs }: TabbedSidebarLayoutProps) {
   }, []);
 
   const closeOverlay = useCallback(() => {
-    setIsVisible(false); // slide-down transition shuru
+    setIsVisible(false);
     closeTimeoutRef.current = setTimeout(() => {
       setMobileOpen(false);
       setDragY(0);
@@ -67,7 +70,7 @@ export function TabbedSidebarLayout({ tabs }: TabbedSidebarLayoutProps) {
   const handleMobileTabClick = useCallback(
     (id: string) => {
       if (mobileOpen && id === activeTabId) {
-        closeOverlay(); // active icon retap -> smooth close
+        closeOverlay();
         return;
       }
       openOverlay(id);
@@ -75,28 +78,66 @@ export function TabbedSidebarLayout({ tabs }: TabbedSidebarLayoutProps) {
     [mobileOpen, activeTabId, openOverlay, closeOverlay]
   );
 
+  // Poori sheet pe touch — lekin scroll content ko block mat karo
   const handleTouchStart = useCallback((e: TouchEvent<HTMLDivElement>) => {
+    const scrollEl = scrollableRef.current;
+    // Agar scrollable area top pe hai tabhi drag allow karo
+    if (scrollEl && scrollEl.scrollTop > 0) return;
+
     touchStartY.current = e.touches[0].clientY;
-    setIsDragging(true);
+    touchStartTime.current = Date.now();
+    setIsDragging(false); // abhi decide nahi, wait karo
   }, []);
 
   const handleTouchMove = useCallback((e: TouchEvent<HTMLDivElement>) => {
     if (touchStartY.current === null) return;
     const delta = e.touches[0].clientY - touchStartY.current;
-    setDragY(Math.max(0, delta)); // sirf neechay ki taraf drag allow
+
+    if (delta <= 0) {
+      // Upar swipe = normal scroll, drag cancel
+      touchStartY.current = null;
+      setIsDragging(false);
+      setDragY(0);
+      return;
+    }
+
+    // Sirf neechay drag allow, scroll block
+    e.preventDefault();
+    setIsDragging(true);
+    // Resistance effect — jitna zyada drag utna slow
+    const resistance = 1 - Math.min(delta / 800, 0.4);
+    setDragY(delta * resistance);
   }, []);
 
-  const handleTouchEnd = useCallback(() => {
+  const handleTouchEnd = useCallback((e: TouchEvent<HTMLDivElement>) => {
+    if (!isDragging) {
+      touchStartY.current = null;
+      return;
+    }
+
     setIsDragging(false);
-    if (dragY > SWIPE_CLOSE_THRESHOLD) {
+
+    // Velocity calculate karo
+    const elapsed = Date.now() - (touchStartTime.current ?? Date.now());
+    const velocity = dragY / elapsed;
+
+    if (dragY > SWIPE_CLOSE_THRESHOLD || velocity > SWIPE_VELOCITY_THRESHOLD) {
       closeOverlay();
     } else {
-      setDragY(0); // transition on ho ke smoothly snap-back hoga
+      setDragY(0); // snap back
     }
-    touchStartY.current = null;
-  }, [dragY, closeOverlay]);
 
-  // Drag ke dauraan finger ko 1:1 follow karo (no transition), warna eased transition
+    touchStartY.current = null;
+    touchStartTime.current = null;
+  }, [isDragging, dragY, closeOverlay]);
+
+  // Drag ke saath backdrop bhi fade — YouTube jaisi feel
+  const backdropOpacity = isDragging
+    ? Math.max(0, 1 - dragY / 400)
+    : isVisible
+    ? 1
+    : 0;
+
   const sheetTransform = isDragging
     ? `translateY(${dragY}px)`
     : isVisible
@@ -105,7 +146,7 @@ export function TabbedSidebarLayout({ tabs }: TabbedSidebarLayoutProps) {
 
   return (
     <>
-      {/* Desktop: inline tabs, normal flow */}
+      {/* Desktop: inline sidebar */}
       <aside className="hidden md:flex md:w-80 md:shrink-0 md:flex-col md:border-r md:border-border bg-white">
         <div className="flex border-b border-border px-1">
           {tabs.map((tab) => {
@@ -130,7 +171,7 @@ export function TabbedSidebarLayout({ tabs }: TabbedSidebarLayoutProps) {
         <div className="flex-1 overflow-y-auto p-3">{activeTab?.content}</div>
       </aside>
 
-      {/* Mobile/Tablet: bottom icon bar — fixed = viewport-pinned, scroll jank-proof */}
+      {/* Mobile: bottom nav bar */}
       <nav className="md:hidden fixed inset-x-0 bottom-0 z-30 flex h-16 border-t border-border bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.06)]">
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -150,25 +191,30 @@ export function TabbedSidebarLayout({ tabs }: TabbedSidebarLayoutProps) {
         })}
       </nav>
 
-      {/* Mobile/Tablet: fullscreen overlay, blurred backdrop, drag-to-dismiss */}
+      {/* Mobile: bottom sheet overlay */}
       {mobileOpen && (
         <div
           className="md:hidden fixed inset-0 z-20 flex flex-col bg-black/20 backdrop-blur-sm"
-          style={{ opacity: isVisible ? 1 : 0, transition: BACKDROP_TRANSITION }}
+          style={{
+            opacity: backdropOpacity,
+            transition: isDragging ? "none" : BACKDROP_TRANSITION,
+          }}
           onClick={closeOverlay}
         >
           <div
+            ref={sheetRef}
             className="mt-6 mb-16 flex flex-1 flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl"
-            style={{ transform: sheetTransform, transition: isDragging ? "none" : SHEET_TRANSITION }}
+            style={{
+              transform: sheetTransform,
+              transition: isDragging ? "none" : SHEET_TRANSITION,
+            }}
             onClick={(e) => e.stopPropagation()}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
           >
-            <div
-              className="flex shrink-0 flex-col items-center border-b border-border px-4 pb-2 pt-2"
-              style={{ touchAction: "none" }}
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
-            >
+            {/* Drag handle + header */}
+            <div className="flex shrink-0 flex-col items-center border-b border-border px-4 pb-2 pt-2">
               <div className="mb-2 h-1 w-10 rounded-full bg-border" />
               <div className="flex w-full items-center justify-between">
                 <span className="text-sm font-semibold">{activeTab?.label}</span>
@@ -177,7 +223,11 @@ export function TabbedSidebarLayout({ tabs }: TabbedSidebarLayoutProps) {
                 </button>
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto p-3">{activeTab?.content}</div>
+
+            {/* Scrollable content */}
+            <div ref={scrollableRef} className="flex-1 overflow-y-auto p-3">
+              {activeTab?.content}
+            </div>
           </div>
         </div>
       )}
