@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect, type ReactNode, type TouchEvent } from "react";
+import {
+  useState,
+  useRef,
+  useCallback,
+  useEffect,
+  type ReactNode,
+  type TouchEvent,
+} from "react";
 import { X, type LucideIcon } from "lucide-react";
 
 export interface SidebarTabDef {
@@ -15,151 +22,185 @@ interface TabbedSidebarLayoutProps {
 }
 
 const SWIPE_CLOSE_THRESHOLD = 120;
-const SWIPE_VELOCITY_THRESHOLD = 0.5; // px/ms — fast flick se bhi close ho
+const SWIPE_VELOCITY_THRESHOLD = 0.5;
 const ANIMATION_MS = 320;
-const SHEET_TRANSITION = "transform 320ms cubic-bezier(0.25, 0.46, 0.45, 0.94)";
+const SHEET_TRANSITION =
+  "transform 320ms cubic-bezier(0.25, 0.46, 0.45, 0.94)";
 const BACKDROP_TRANSITION = "opacity 320ms ease";
 
 export function TabbedSidebarLayout({ tabs }: TabbedSidebarLayoutProps) {
   const [activeTabId, setActiveTabId] = useState(tabs[0]?.id ?? "");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  const [dragY, setDragY] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
 
-  const touchStartY = useRef<number | null>(null);
-  const touchStartTime = useRef<number | null>(null); // velocity ke liye
-  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
-  const scrollableRef = useRef<HTMLDivElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
+const scrollableRef = useRef<HTMLDivElement>(null);
 
-  const activeTab = tabs.find((t) => t.id === activeTabId) ?? tabs[0];
+  const dragY = useRef(0);
+  const startY = useRef<number | null>(null);
+  const startTime = useRef<number | null>(null);
 
-  useEffect(() => {
-    if (!mobileOpen) return;
-    const raf = requestAnimationFrame(() => setIsVisible(true));
-    return () => cancelAnimationFrame(raf);
-  }, [mobileOpen]);
+  const raf = useRef<number | null>(null);
+  const closeTimer = useRef<NodeJS.Timeout | null>(null);
 
+  const activeTab =
+    tabs.find((t) => t.id === activeTabId) ?? tabs[0];
+
+  // OPEN animation
   const openOverlay = useCallback((id: string) => {
-    if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+
     setActiveTabId(id);
-    setDragY(0);
-    setIsVisible(false);
     setMobileOpen(true);
+    setIsVisible(false);
+
+    dragY.current = 0;
+
+    requestAnimationFrame(() => {
+      setIsVisible(true);
+    });
   }, []);
 
+  // CLOSE animation
   const closeOverlay = useCallback(() => {
     setIsVisible(false);
-    closeTimeoutRef.current = setTimeout(() => {
+
+    if (sheetRef.current) {
+      sheetRef.current.style.transform = "translateY(100%)";
+    }
+
+    closeTimer.current = setTimeout(() => {
       setMobileOpen(false);
-      setDragY(0);
+      dragY.current = 0;
     }, ANIMATION_MS);
   }, []);
 
+  // LOCK BODY SCROLL
   useEffect(() => {
+    if (!mobileOpen) return;
+
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
     return () => {
-      if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+      document.body.style.overflow = prev;
     };
-  }, []);
+  }, [mobileOpen]);
 
-  const handleDesktopTabClick = useCallback((id: string) => {
-    setActiveTabId(id);
-  }, []);
+  // TOUCH START
+const handleTouchStart = useCallback((e: TouchEvent<HTMLDivElement>) => {
+  const scrollEl = scrollableRef.current;
 
-  const handleMobileTabClick = useCallback(
-    (id: string) => {
-      if (mobileOpen && id === activeTabId) {
-        closeOverlay();
-        return;
-      }
-      openOverlay(id);
-    },
-    [mobileOpen, activeTabId, openOverlay, closeOverlay]
-  );
+  const isAtTop = !scrollEl || scrollEl.scrollTop <= 0;
 
-  // Poori sheet pe touch — lekin scroll content ko block mat karo
-  const handleTouchStart = useCallback((e: TouchEvent<HTMLDivElement>) => {
-    const scrollEl = scrollableRef.current;
-    // Agar scrollable area top pe hai tabhi drag allow karo
-    if (scrollEl && scrollEl.scrollTop > 0) return;
+  if (!isAtTop) {
+    startY.current = null;
+    return;
+  }
 
-    touchStartY.current = e.touches[0].clientY;
-    touchStartTime.current = Date.now();
-    setIsDragging(false); // abhi decide nahi, wait karo
-  }, []);
+  startY.current = e.touches[0].clientY;
+  startTime.current = Date.now();
+}, []);
 
-  const handleTouchMove = useCallback((e: TouchEvent<HTMLDivElement>) => {
-    if (touchStartY.current === null) return;
-    const delta = e.touches[0].clientY - touchStartY.current;
+  // TOUCH MOVE (NO RE-RENDER = NO LAG)
+const handleTouchMove = useCallback((e: TouchEvent<HTMLDivElement>) => {
+  if (startY.current === null) return;
 
-    if (delta <= 0) {
-      // Upar swipe = normal scroll, drag cancel
-      touchStartY.current = null;
-      setIsDragging(false);
-      setDragY(0);
-      return;
+  const delta = e.touches[0].clientY - startY.current;
+
+  if (delta <= 0) return;
+
+  e.preventDefault();
+
+  dragY.current = delta;
+
+  if (raf.current) return;
+
+  raf.current = requestAnimationFrame(() => {
+    if (sheetRef.current) {
+      sheetRef.current.style.transform =
+        `translateY(${dragY.current}px)`;
     }
+const screenHeight = window.innerHeight;
 
-    // Sirf neechay drag allow, scroll block
-    e.preventDefault();
-    setIsDragging(true);
-    // Resistance effect — jitna zyada drag utna slow
-    const resistance = 1 - Math.min(delta / 800, 0.4);
-    setDragY(delta * resistance);
-  }, []);
+// sheet bottom travel realistically ~ full height
+const maxDrag = screenHeight * 0.9;
 
-  const handleTouchEnd = useCallback((e: TouchEvent<HTMLDivElement>) => {
-    if (!isDragging) {
-      touchStartY.current = null;
-      return;
-    }
+const progress = Math.min(dragY.current / maxDrag, 1);
 
-    setIsDragging(false);
+const fadeStart = 0.7;
 
-    // Velocity calculate karo
-    const elapsed = Date.now() - (touchStartTime.current ?? Date.now());
-    const velocity = dragY / elapsed;
+let opacity = 1;
 
-    if (dragY > SWIPE_CLOSE_THRESHOLD || velocity > SWIPE_VELOCITY_THRESHOLD) {
+if (progress <= fadeStart) {
+  opacity = 1;
+} else {
+  const t = (progress - fadeStart) / (1 - fadeStart);
+  opacity = 1 - Math.pow(t, 2.5);
+}
+
+
+if (backdropRef.current) {
+  backdropRef.current.style.opacity = String(opacity);
+}
+
+    raf.current = null;
+  });
+}, []);
+
+  // TOUCH END
+  const handleTouchEnd = useCallback(() => {
+    const elapsed = Date.now() - (startTime.current ?? Date.now());
+    const velocity = dragY.current / elapsed;
+
+    const shouldClose =
+      dragY.current > SWIPE_CLOSE_THRESHOLD ||
+      velocity > SWIPE_VELOCITY_THRESHOLD;
+
+    if (shouldClose) {
       closeOverlay();
     } else {
-      setDragY(0); // snap back
+      if (sheetRef.current) {
+        sheetRef.current.style.transition = SHEET_TRANSITION;
+        sheetRef.current.style.transform = "translateY(0)";
+      }
     }
 
-    touchStartY.current = null;
-    touchStartTime.current = null;
-  }, [isDragging, dragY, closeOverlay]);
+    dragY.current = 0;
+    startY.current = null;
+    startTime.current = null;
+  }, [closeOverlay]);
 
-  // Drag ke saath backdrop bhi fade — YouTube jaisi feel
-  const backdropOpacity = isDragging
-    ? Math.max(0, 1 - dragY / 400)
-    : isVisible
-    ? 1
-    : 0;
 
-  const sheetTransform = isDragging
-    ? `translateY(${dragY}px)`
-    : isVisible
-    ? "translateY(0)"
-    : "translateY(100%)";
+const handleTabClick = (tabId: string) => {
+  if (mobileOpen) {
+    if (activeTabId === tabId) {
+      closeOverlay();
+    } else {
+      setActiveTabId(tabId);
+    }
+  } else {
+    openOverlay(tabId);
+  }
+};
+
 
   return (
     <>
-      {/* Desktop: inline sidebar */}
-      <aside className="hidden md:flex md:w-80 md:shrink-0 md:flex-col md:border-r md:border-border bg-white">
-        <div className="flex border-b border-border px-1">
+      {/* DESKTOP SIDEBAR */}
+      <aside className="hidden md:flex md:w-80 md:flex-col border-r bg-white">
+        <div className="flex border-b px-2">
           {tabs.map((tab) => {
             const Icon = tab.icon;
-            const isActive = tab.id === activeTabId;
+            const active = tab.id === activeTabId;
+
             return (
               <button
                 key={tab.id}
-                onClick={() => handleDesktopTabClick(tab.id)}
-                className={`flex flex-1 flex-col items-center gap-1 py-3 text-[11px] font-medium border-b-2 transition-colors ${
-                  isActive
-                    ? "border-primary text-primary"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
+                onClick={() => setActiveTabId(tab.id)}
+                className={`flex flex-1 flex-col items-center py-3 text-xs ${
+                  active ? "text-blue-600" : "text-gray-500"
                 }`}
               >
                 <Icon className="h-4 w-4" />
@@ -168,21 +209,22 @@ export function TabbedSidebarLayout({ tabs }: TabbedSidebarLayoutProps) {
             );
           })}
         </div>
-        <div className="flex-1 overflow-y-auto p-3">{activeTab?.content}</div>
+
+        <div className="p-3 overflow-y-auto">
+          {activeTab?.content}
+        </div>
       </aside>
 
-      {/* Mobile: bottom nav bar */}
-      <nav className="md:hidden fixed inset-x-0 bottom-0 z-30 flex h-16 border-t border-border bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.06)]">
+      {/* MOBILE NAV */}
+      <nav className="md:hidden fixed bottom-0 inset-x-0 h-16 bg-white border-t flex z-30">
         {tabs.map((tab) => {
           const Icon = tab.icon;
-          const isActive = mobileOpen && tab.id === activeTabId;
+
           return (
             <button
               key={tab.id}
-              onClick={() => handleMobileTabClick(tab.id)}
-              className={`flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors ${
-                isActive ? "text-primary" : "text-muted-foreground"
-              }`}
+onClick={() => handleTabClick(tab.id)}
+              className="flex flex-1 flex-col items-center justify-center text-xs text-gray-600"
             >
               <Icon className="h-5 w-5" />
               {tab.label}
@@ -191,41 +233,46 @@ export function TabbedSidebarLayout({ tabs }: TabbedSidebarLayoutProps) {
         })}
       </nav>
 
-      {/* Mobile: bottom sheet overlay */}
+      {/* MOBILE SHEET */}
       {mobileOpen && (
         <div
-          className="md:hidden fixed inset-0 z-20 flex flex-col bg-black/20 backdrop-blur-sm"
+          ref={backdropRef}
+          className="fixed inset-0 z-20 bg-black/40 flex flex-col"
           style={{
-            opacity: backdropOpacity,
-            transition: isDragging ? "none" : BACKDROP_TRANSITION,
+            opacity: isVisible ? 1 : 0,
+            transition: BACKDROP_TRANSITION,
           }}
           onClick={closeOverlay}
         >
-          <div
-            ref={sheetRef}
-            className="mt-6 mb-16 flex flex-1 flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl"
-            style={{
-              transform: sheetTransform,
-              transition: isDragging ? "none" : SHEET_TRANSITION,
-            }}
-            onClick={(e) => e.stopPropagation()}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-          >
-            {/* Drag handle + header */}
-            <div className="flex shrink-0 flex-col items-center border-b border-border px-4 pb-2 pt-2">
-              <div className="mb-2 h-1 w-10 rounded-full bg-border" />
-              <div className="flex w-full items-center justify-between">
-                <span className="text-sm font-semibold">{activeTab?.label}</span>
-                <button onClick={closeOverlay} className="text-muted-foreground">
-                  <X className="h-5 w-5" />
+      <div
+  ref={sheetRef}
+  className="mt-6 mb-16 flex flex-col flex-1 bg-white rounded-t-2xl overflow-hidden"
+  style={{
+    transform: isVisible ? "translateY(0)" : "translateY(100%)",
+    transition: SHEET_TRANSITION,
+  }}
+  onClick={(e) => e.stopPropagation()}
+  onTouchStart={handleTouchStart}
+  onTouchMove={(e) => handleTouchMove(e)}
+  onTouchEnd={handleTouchEnd}
+>
+            {/* HANDLE */}
+            <div
+              className="p-3 border-b flex flex-col items-center"
+            >
+              <div className="w-10 h-1 bg-gray-300 rounded-full mb-2" />
+              <div className="flex w-full justify-between">
+                <span className="font-semibold">
+                  {activeTab?.label}
+                </span>
+                <button onClick={closeOverlay}>
+                  <X />
                 </button>
               </div>
             </div>
 
-            {/* Scrollable content */}
-            <div ref={scrollableRef} className="flex-1 overflow-y-auto p-3">
+            {/* CONTENT */}
+            <div className="flex-1 overflow-y-auto p-3">
               {activeTab?.content}
             </div>
           </div>
