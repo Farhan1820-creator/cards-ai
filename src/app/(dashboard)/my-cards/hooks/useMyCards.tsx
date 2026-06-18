@@ -93,13 +93,19 @@ if (filters.search &&
     setSelectedIds(new Set());
   }, []);
 
-  const toggleSelect = useCallback((id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  }, []);
+const toggleSelect = useCallback((id: string) => {
+  setSelectedIds((prev) => {
+    const next = new Set(prev);
+
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+
+    return next;
+  });
+}, []);
 
   const selectAll = useCallback(() => {
     setSelectedIds(new Set(filteredCards.map((c) => c.id)));

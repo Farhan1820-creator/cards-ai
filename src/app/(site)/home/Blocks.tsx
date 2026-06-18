@@ -1,7 +1,7 @@
 "use client";
 
 // import { motion } from "framer-motion";
-import { PencilRuler, Wand2, Download, Share2, ArrowRight } from "lucide-react";
+import { PencilRuler, Wand2, Download, ArrowRight } from "lucide-react";
 
 const steps = [
   {

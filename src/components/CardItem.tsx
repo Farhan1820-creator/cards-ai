@@ -1,14 +1,13 @@
 "use client"
 
 import { useState } from "react";
-import { Download, RefreshCw, Trash2 } from "lucide-react";
+import { Download, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { on } from "events";
 
 interface CardItemProps {
   id: string;
@@ -21,7 +20,6 @@ interface CardItemProps {
 }
 
 export function CardItem({
-  id,
   imageUrl,
   cardType,
   recipientName,

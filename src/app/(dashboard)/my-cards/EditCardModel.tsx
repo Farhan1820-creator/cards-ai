@@ -118,7 +118,7 @@ const handleDownload = useCallback(async () => {
     URL.revokeObjectURL(url);
 
     toast.success("Downloaded!");
-  } catch (err) {
+  } catch {
     toast.error("Download failed");
   }
 }, [previewUrl, recipientName, card]);

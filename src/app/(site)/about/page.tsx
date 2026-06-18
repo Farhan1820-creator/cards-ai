@@ -90,7 +90,7 @@ export default function About() {
         We offer a growing library of professionally designed templates for birthdays, weddings, holidays, and more. Pick a template, personalize it, and share it instantly.
       </p>
       <p className="font-semibold text-gray-900">
-        Today, 50,000+ people trust Cards AI to help them express what words alone sometimes can't.
+        Today, 50,000+ people trust Cards AI to help them express what words alone sometimes can&apost.
       </p>
     </div>
 
@@ -170,7 +170,7 @@ export default function About() {
               </h2>
             </div>
             <p className="text-purple-100 leading-relaxed">
-              Join 50,000+ people who use Cards AI to celebrate life's moments — big and small. Free to start, no credit card needed.
+              Join 50,000+ people who use Cards AI to celebrate life&aposs moments — big and small. Free to start, no credit card needed.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <Link

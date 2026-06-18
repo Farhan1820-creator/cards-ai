@@ -41,7 +41,7 @@ export default function HeroSection() {
           </h1>
 
           <p className="text-gray-500 text-sm sm:text-base md:text-lg max-w-xl mx-auto mb-8 leading-relaxed">
-            The world's most sophisticated AI-powered greeting card generator.
+            The world&aposs most sophisticated AI-powered greeting card generator.
             Professional designs, personalized messages, and instant delivery.
           </p>
 

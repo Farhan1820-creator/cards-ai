@@ -97,7 +97,7 @@ function DeleteDialog({ open, title, onConfirm, onCancel }: {
         </div>
         <h3 className="text-lg font-bold text-gray-900 mb-1">Delete Template?</h3>
         <p className="text-sm text-gray-500 mb-6">
-          <span className="font-semibold text-gray-700">"{title}"</span> will be permanently removed.
+          <span className="font-semibold text-gray-700">&apos{title}&apos</span> will be permanently removed.
         </p>
         <div className="flex gap-3">
           <button onClick={onCancel} className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50">

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Plus, FolderOpen, Sparkles, PanelsRightBottom, BlocksIcon, LogOut, X, Users } from "lucide-react";
+import { Plus, FolderOpen, PanelsRightBottom, BlocksIcon, LogOut, X, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { signOut } from "next-auth/react";

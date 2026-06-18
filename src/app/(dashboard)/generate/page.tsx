@@ -332,7 +332,7 @@ const handleShare = async () => {
   return (
   <div className="flex h-[100dvh] flex-col overflow-hidden bg-[#f8f7ff]">
       {/* Header */}
-<div className="flex flex-wrap items-center gap-3 border-b border-border bg-white px-4 py-3 shadow-sm shrink-0 sm:px-6 sm:py-4">
+      <div className="flex flex-wrap items-center gap-3 border-b border-border bg-white px-4 py-3 shadow-sm shrink-0 sm:px-6 sm:py-4">
   <div>
     <h1 className="text-lg font-bold leading-none text-primary sm:text-2xl">
       Lets create amazing cards
@@ -346,33 +346,33 @@ const handleShare = async () => {
   </div>
 </div>
 
-<div className="flex flex-1 overflow-hidden flex-col md:flex-row">
-  <aside className="
-    w-full shrink-0 overflow-y-auto border-b border-border bg-white px-3 py-3
-    md:w-80 md:border-b-0 md:border-r md:py-4
-    max-h-[45vh] md:max-h-none
-  ">
-              {mode === "template" ? (
-            <TemplateSidebarPanel
-              cardType={tmplCardType}
-              onCardTypeChange={handleTmplCardTypeChange}
-              templates={templates}
-              isTempLoading={isLoadingTemplates}
-              selectedTemplate={selectedTemplate}
-              onTemplateSelect={setSelectedTemplate}
-              recipientName={tmplRecipientName}
-              onRecipientNameChange={setTmplRecipientName}
-              message={tmplMessage}
-              onMessageChange={setTmplMessage}
-              nameColor={nameColor}
-              onNameColorChange={setNameColor}
-              messageColor={messageColor}
-              onMessageColorChange={setMessageColor}
-              photoUrl={photoUrl}
-              onPhotoChange={handlePhotoChange}
-              isEditing={!!existingCardId}
-            />
-          ) : (
+ <div className="relative flex flex-1 overflow-hidden flex-col md:flex-row">
+        {mode === "template" ? (
+          <TemplateSidebarPanel
+            cardType={tmplCardType}
+            onCardTypeChange={handleTmplCardTypeChange}
+            templates={templates}
+            isTempLoading={isLoadingTemplates}
+            selectedTemplate={selectedTemplate}
+            onTemplateSelect={setSelectedTemplate}
+            recipientName={tmplRecipientName}
+            onRecipientNameChange={setTmplRecipientName}
+            message={tmplMessage}
+            onMessageChange={setTmplMessage}
+            nameColor={nameColor}
+            onNameColorChange={setNameColor}
+            messageColor={messageColor}
+            onMessageColorChange={setMessageColor}
+            photoUrl={photoUrl}
+            onPhotoChange={handlePhotoChange}
+            isEditing={!!existingCardId}
+          />
+        ) : (
+          <aside className="
+            w-full shrink-0 overflow-y-auto border-b border-border bg-white px-3 py-3
+            md:w-80 md:border-b-0 md:border-r md:py-4
+            max-h-[45vh] md:max-h-none
+          ">
             <AISidebarPanel
               cardType={aiCardType}
               onCardTypeChange={setAiCardType}
@@ -401,11 +401,14 @@ const handleShare = async () => {
               recipientName={aiRecipientName}
               onRecipientNameChange={setAiRecipientName}
             />
-          )}
-        </aside>
+          </aside>
+        )}
 
-  <main className="flex flex-1 flex-col items-center justify-start overflow-y-auto px-4 py-4 gap-4 sm:px-8 sm:py-6">
-          {mode === "template" ? (
+        <main
+          className={`flex flex-1 flex-col items-center justify-start overflow-y-auto px-4 py-4 gap-4 sm:px-8 sm:py-6 ${
+            mode === "template" ? "pb-20 md:pb-6" : ""
+          }`}
+        >          {mode === "template" ? (
             <div className="w-full max-w-lg">
               <TemplateCardGenerator
                 cardType={tmplCardType}
