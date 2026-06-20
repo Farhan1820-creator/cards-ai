@@ -104,7 +104,7 @@ const handleTouchStart = useCallback((e: TouchEvent<HTMLDivElement>) => {
 }, []);
 
   // TOUCH MOVE (NO RE-RENDER = NO LAG)
-const handleTouchMove = useCallback((e: TouchEvent<HTMLDivElement>) => {
+const handleTouchMove = useCallback((e: globalThis.TouchEvent) => {
   if (startY.current === null) return;
 
   const delta = e.touches[0].clientY - startY.current;
@@ -119,35 +119,39 @@ const handleTouchMove = useCallback((e: TouchEvent<HTMLDivElement>) => {
 
   raf.current = requestAnimationFrame(() => {
     if (sheetRef.current) {
-      sheetRef.current.style.transform =
-        `translateY(${dragY.current}px)`;
+      sheetRef.current.style.transform = `translateY(${dragY.current}px)`;
     }
-const screenHeight = window.innerHeight;
+    const screenHeight = window.innerHeight;
+    const maxDrag = screenHeight * 0.9;
+    const progress = Math.min(dragY.current / maxDrag, 1);
+    const fadeStart = 0.7;
 
-// sheet bottom travel realistically ~ full height
-const maxDrag = screenHeight * 0.9;
+    let opacity = 1;
+    if (progress <= fadeStart) {
+      opacity = 1;
+    } else {
+      const t = (progress - fadeStart) / (1 - fadeStart);
+      opacity = 1 - Math.pow(t, 2.5);
+    }
 
-const progress = Math.min(dragY.current / maxDrag, 1);
-
-const fadeStart = 0.7;
-
-let opacity = 1;
-
-if (progress <= fadeStart) {
-  opacity = 1;
-} else {
-  const t = (progress - fadeStart) / (1 - fadeStart);
-  opacity = 1 - Math.pow(t, 2.5);
-}
-
-
-if (backdropRef.current) {
-  backdropRef.current.style.opacity = String(opacity);
-}
+    if (backdropRef.current) {
+      backdropRef.current.style.opacity = String(opacity);
+    }
 
     raf.current = null;
   });
 }, []);
+
+useEffect(() => {
+  const sheet = sheetRef.current;
+  if (!sheet || !mobileOpen) return;
+
+  sheet.addEventListener("touchmove", handleTouchMove, { passive: false });
+
+  return () => {
+    sheet.removeEventListener("touchmove", handleTouchMove);
+  };
+}, [mobileOpen, handleTouchMove]);
 
   // TOUCH END
   const handleTouchEnd = useCallback(() => {
@@ -244,7 +248,7 @@ onClick={() => handleTabClick(tab.id)}
           }}
           onClick={closeOverlay}
         >
-      <div
+     <div
   ref={sheetRef}
   className="mt-6 mb-16 flex flex-col flex-1 bg-white rounded-t-2xl overflow-hidden"
   style={{
@@ -253,7 +257,6 @@ onClick={() => handleTabClick(tab.id)}
   }}
   onClick={(e) => e.stopPropagation()}
   onTouchStart={handleTouchStart}
-  onTouchMove={(e) => handleTouchMove(e)}
   onTouchEnd={handleTouchEnd}
 >
             {/* HANDLE */}

@@ -1,16 +1,13 @@
 // app/api/admin/users/route.ts
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { requireAdminApi } from "@/lib/api-auth";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { desc, ilike, or } from "drizzle-orm";
 
 export async function GET(req: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.isAdmin) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const { error } = await requireAdminApi();
+  if (error) return error;
 
   const { searchParams } = new URL(req.url);
   const search = searchParams.get("search") ?? "";

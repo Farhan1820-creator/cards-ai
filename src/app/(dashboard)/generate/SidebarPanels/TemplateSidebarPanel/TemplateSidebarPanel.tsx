@@ -4,15 +4,19 @@ import { useMemo } from "react";
 import { LayoutGrid, Type, Image as ImageIcon } from "lucide-react";
 
 import { TabbedSidebarLayout } from "@/app/(dashboard)/generate/SidebarPanels/TabbedSidebarLayout";
-import { type CardType } from "../components/CardTypeSelector";
+import { type Category } from "@/app/(dashboard)/generate/page";
 import { type Template } from "./components/TemplateGrid";
 import { TemplatesTabContent } from "./components/TemplatesTabContent";
 import { PersonalizeTabContent } from "./components/PersonalizeTabContent";
 import { PhotoTabContent } from "./components/PhotoTabContent";
 
 interface TemplateSidebarPanelProps {
-  cardType: CardType;
-  onCardTypeChange: (t: CardType) => void;
+  // category props — dynamic
+  categories: Category[];
+  isLoadingCategories: boolean;
+  selectedCategoryId: string;
+  onCategoryChange: (id: string) => void;
+  // rest same
   templates: Template[];
   isTempLoading: boolean;
   selectedTemplate: Template | null;
@@ -31,7 +35,7 @@ interface TemplateSidebarPanelProps {
 }
 
 export function TemplateSidebarPanel({
-  cardType, onCardTypeChange,
+  categories, isLoadingCategories, selectedCategoryId, onCategoryChange,
   templates, isTempLoading, selectedTemplate, onTemplateSelect,
   recipientName, onRecipientNameChange,
   message, onMessageChange,
@@ -41,11 +45,7 @@ export function TemplateSidebarPanel({
 }: TemplateSidebarPanelProps) {
   const templateChosen = selectedTemplate !== null;
 
-  const filteredTemplates = useMemo(
-    () => templates.filter((t) => t.category.toLowerCase().trim() === cardType.toLowerCase().trim()),
-    [templates, cardType]
-  );
-
+  // filtering ab parent se ho rahi hai (API level) — yahan sirf templates as-is pass karo
   const tabs = useMemo(
     () => [
       {
@@ -54,10 +54,12 @@ export function TemplateSidebarPanel({
         icon: LayoutGrid,
         content: (
           <TemplatesTabContent
-            cardType={cardType}
-            onCardTypeChange={onCardTypeChange}
+            categories={categories}
+            isLoadingCategories={isLoadingCategories}
+            selectedCategoryId={selectedCategoryId}
+            onCategoryChange={onCategoryChange}
             isLoading={isTempLoading}
-            templates={filteredTemplates}
+            templates={templates}
             selectedId={selectedTemplate?.id ?? null}
             onSelect={onTemplateSelect}
           />
@@ -95,11 +97,11 @@ export function TemplateSidebarPanel({
       },
     ],
     [
-      cardType, onCardTypeChange, isTempLoading, filteredTemplates,
-      selectedTemplate?.id, onTemplateSelect, templateChosen,
-      recipientName, onRecipientNameChange, nameColor, onNameColorChange,
-      message, onMessageChange, messageColor, onMessageColorChange,
-      photoUrl, onPhotoChange,
+      categories, isLoadingCategories, selectedCategoryId, onCategoryChange,
+      isTempLoading, templates, selectedTemplate?.id, onTemplateSelect,
+      templateChosen, recipientName, onRecipientNameChange,
+      nameColor, onNameColorChange, message, onMessageChange,
+      messageColor, onMessageColorChange, photoUrl, onPhotoChange,
     ]
   );
 

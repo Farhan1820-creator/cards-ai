@@ -2,32 +2,40 @@
 import "server-only";
 import { db } from "@/db";
 import { cards, users } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
 import { nanoid } from "nanoid";
-import { deleteCloudinaryImage } from "@/lib/cloudinary";
-import { extractCloudinaryPublicId } from "@/lib/cloudinary-utils";
+import { desc, eq } from "drizzle-orm";
+import { deleteCloudinaryImage, extractCloudinaryPublicId } from "../cloudinary";
 
-interface PhotoTransform {
-  scale:   number;
-  offsetX: number;
-  offsetY: number;
-}
-
-// ── Create card ───────────────────────────────────────────────
 export async function createCard(data: {
-  userId:        string;
-  imageUrl:      string;
-  prompt:        string;
-  cardType:      string;
+  userId: string;
+  imageUrl: string;
   recipientName?: string;
-  templateId?:   string;
-  nameColor?:    string;
+  message?: string;
+  prompt?: string;
+  templateId: string;
+  nameColor?: string;
   messageColor?: string;
-  photoUrl?:     string;
-  photoTransform?: PhotoTransform | null;
+  photoUrl?: string;
+  photoTransform?: { scale: number; offsetX: number; offsetY: number };
 }) {
-  const card = { id: nanoid(), ...data };
-  await db.insert(cards).values(card);
+
+  const [card] = await db
+    .insert(cards)
+    .values({
+      id: nanoid(),
+      userId: data.userId,
+      imageUrl: data.imageUrl,
+      templateId: data.templateId,
+      recipientName: data.recipientName,
+      message: data.message,
+      prompt: data.prompt ?? "",
+      nameColor: data.nameColor,
+      messageColor: data.messageColor,
+      photoUrl: data.photoUrl,
+      photoTransform: data.photoTransform,
+    })
+    .returning();
+
   return card;
 }
 
@@ -47,8 +55,8 @@ export async function getAllCards() {
       id:            cards.id,
       imageUrl:      cards.imageUrl,
       prompt:        cards.prompt,
-      cardType:      cards.cardType,
       recipientName: cards.recipientName,
+      message: cards.message,
       createdAt:     cards.createdAt,
       userId:        cards.userId,
       userName:      users.name,

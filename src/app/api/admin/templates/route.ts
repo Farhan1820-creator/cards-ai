@@ -1,31 +1,37 @@
 // src/app/api/admin/templates/route.ts
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { requireAdminApi } from "@/lib/api-auth";
 import {
-  getAllTemplates,
+  getAdminTemplates,
   createTemplate,
   updateTemplate,
   deleteTemplate,
 } from "@/lib/actions/templates";
 import type { OverlayConfig } from "@/app/(dashboard)/templates/OverlayConfigurator";
 
-async function requireAdmin() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.isAdmin) return null;
-  return session;
+function errorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
 }
 
 // ── GET — sab templates ───────────────────────────────────────
 export async function GET() {
-  const session = await requireAdmin();
-  if (!session) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const { error } = await requireAdminApi();
+  if (error) return error;
 
   try {
-    const result = await getAllTemplates();
-    return NextResponse.json({ templates: result });
+    const result = await getAdminTemplates();
+
+    const templates = result.map((t) => ({
+      id: t.id,
+      title: t.name,
+      categoryId: t.categoryId,
+      category: t.category,
+      imageUrl: t.imageUrl,
+      createdAt: t.createdAt,
+      overlayConfig: t.overlayConfig ?? undefined,
+    }));
+
+    return NextResponse.json(templates);
   } catch {
     return NextResponse.json({ error: "Failed to fetch templates" }, { status: 500 });
   }
@@ -33,46 +39,45 @@ export async function GET() {
 
 // ── POST — naya template create ───────────────────────────────
 export async function POST(request: Request) {
-  const session = await requireAdmin();
-  if (!session) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const { error, user } = await requireAdminApi();
+  if (error) return error;
 
   try {
     const body = await request.json();
-    const { name, category, base64, overlayConfig } = body;
+    const { name, categoryId, base64, overlayConfig } = body;
 
-    if (!name || !category || !base64) {
+    if (!name || !categoryId || !base64) {
       return NextResponse.json(
-        { error: "name, category, base64 required" },
+        { error: "name, categoryId, base64 required" },
         { status: 400 }
       );
     }
 
     const template = await createTemplate({
       name,
-      category,
+      categoryId,
       base64,
       overlayConfig: overlayConfig as OverlayConfig,
-      createdBy: session.user.id!,
+      createdBy: user.id!,
     });
 
     return NextResponse.json({ success: true, template });
-  } catch {
-    return NextResponse.json({ error: "Failed to create template" }, { status: 500 });
+  } catch (error) {
+    return NextResponse.json(
+      { error: errorMessage(error, "Failed to create template") },
+      { status: 400 }
+    );
   }
 }
 
 // ── PATCH — template update ───────────────────────────────────
 export async function PATCH(request: Request) {
-  const session = await requireAdmin();
-  if (!session) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const { error } = await requireAdminApi();
+  if (error) return error;
 
   try {
     const body = await request.json();
-    const { id, name, category, base64, overlayConfig } = body;
+    const { id, name, categoryId, base64, overlayConfig } = body;
 
     if (!id) {
       return NextResponse.json({ error: "id required" }, { status: 400 });
@@ -80,23 +85,24 @@ export async function PATCH(request: Request) {
 
     const template = await updateTemplate(id, {
       name,
-      category,
+      categoryId,
       base64,
       overlayConfig: overlayConfig as OverlayConfig | undefined,
     });
 
     return NextResponse.json({ success: true, template });
-  } catch {
-    return NextResponse.json({ error: "Failed to update template" }, { status: 500 });
+  } catch (error) {
+    return NextResponse.json(
+      { error: errorMessage(error, "Failed to update template") },
+      { status: 400 }
+    );
   }
 }
 
 // ── DELETE — template delete ──────────────────────────────────
 export async function DELETE(request: Request) {
-  const session = await requireAdmin();
-  if (!session) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const { error } = await requireAdminApi();
+  if (error) return error;
 
   try {
     const { id } = await request.json();

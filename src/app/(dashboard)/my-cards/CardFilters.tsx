@@ -5,7 +5,7 @@ import { useState } from "react";
 
 export interface CardFilters {
   search: string;
-  cardType: string;
+  categoryName: string;
   user: string;
   dateFrom: string;
   dateTo: string;
@@ -41,11 +41,11 @@ export function CardFilters({
 
   function reset() {
     setDateError(null);
-    onChange({ search: "", cardType: "", user: "", dateFrom: "", dateTo: "" });
+    onChange({ search: "", categoryName: "", user: "", dateFrom: "", dateTo: "" });
   }
 
   const activeFilterCount = [
-    filters.cardType,
+    filters.categoryName,
     filters.user,
     filters.dateFrom,
     filters.dateTo,
@@ -123,8 +123,8 @@ export function CardFilters({
 
           {/* Card Type */}
           <select
-            value={filters.cardType}
-            onChange={(e) => update("cardType", e.target.value)}
+            value={filters.categoryName}
+            onChange={(e) => update("categoryName", e.target.value)}
             className={selectCls}
           >
             <option value="">All Categories</option>

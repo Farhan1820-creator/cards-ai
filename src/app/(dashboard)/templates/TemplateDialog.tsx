@@ -20,15 +20,13 @@ interface TemplateDialogProps {
 export function TemplateDialog({ template, onClose }: TemplateDialogProps) {
   const router = useRouter();
 
-  const handleUseTemplate = () => {
-    if (!template) return;
-
-    router.push(
-      `/generate?templateId=${template.id}&cardType=${template.category}`
-    );
-
-    onClose();
-  };
+const handleUseTemplate = () => {
+  if (!template) return;
+  router.push(
+    `/generate?templateId=${template.id}&categoryId=${template.categoryId}`
+  );
+  onClose();
+};
 
   return (
     <>
@@ -44,7 +42,7 @@ export function TemplateDialog({ template, onClose }: TemplateDialogProps) {
               {/* Image */}
               <div className="relative w-64 shrink-0 aspect-[3/4]">
                 <img
-                  src={template.thumbnail}
+                  src={template.imageUrl}
                   alt={template.name}
                   className="object-cover w-full h-full"
                 />

@@ -37,7 +37,7 @@ export default function HeroSection() {
           </div>
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-gray-900 mb-4 sm:mb-6 leading-tight">
-            Create <span className="text-purple-600">Magic</span> in Seconds
+            Create <span className="text-primary">Magic</span> in Seconds
           </h1>
 
           <p className="text-gray-500 text-sm sm:text-base md:text-lg max-w-xl mx-auto mb-8 leading-relaxed">

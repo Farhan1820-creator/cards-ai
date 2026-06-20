@@ -2,6 +2,7 @@
 
 import { Check, X, ZoomIn, ZoomOut, Move } from "lucide-react";
 import { useRef, useState, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 export interface PhotoTransform {
   scale:   number;
@@ -18,27 +19,47 @@ interface PanZoomAdjusterProps {
   photoR:           number;
 }
 
-const MIN_ZOOM     = 0.5;
-const MAX_ZOOM     = 3.0;
-const ZOOM_STEP    = 0.1;
-const PREVIEW_SIZE = 260; // preview circle diameter in CSS-px
+const MIN_ZOOM  = 0.5;
+const MAX_ZOOM  = 3.0;
+const ZOOM_STEP = 0.1;
 
+// ── Responsive preview size ────────────────────────────────────
+// Ab viewport ka 55vw ya fixed max — card size se koi lena dena nahi.
+function usePreviewSize(): number {
+  const [size, setSize] = useState(220);
+
+  useEffect(() => {
+    const calc = () => {
+      const vw = window.innerWidth;
+      // 55vw but clamp between 160px and 260px
+      const raw = Math.round(vw * 0.55);
+      setSize(Math.min(260, Math.max(160, raw)));
+    };
+    calc();
+    window.addEventListener("resize", calc);
+    return () => window.removeEventListener("resize", calc);
+  }, []);
+
+  return size;
+}
+
+// ── Style helpers ──────────────────────────────────────────────
 function iconBtnStyle(disabled: boolean): React.CSSProperties {
   return {
     display: "flex", alignItems: "center", justifyContent: "center",
-    width: 28, height: 28, borderRadius: 8,
+    width: 30, height: 30, borderRadius: 8, flexShrink: 0,
     border:     "1px solid rgba(255,255,255,0.15)",
     background: "rgba(255,255,255,0.06)",
     color:      disabled ? "rgba(255,255,255,0.2)" : "#fff",
     cursor:     disabled ? "not-allowed" : "pointer",
-    flexShrink: 0,
   };
 }
 
 function actionBtnStyle(type: "cancel" | "confirm"): React.CSSProperties {
   return {
     display: "flex", alignItems: "center", gap: 5,
-    padding: "7px 16px", borderRadius: 999, fontSize: 12, fontWeight: 600, cursor: "pointer",
+    padding: "9px 20px", borderRadius: 999,
+    fontSize: 13, fontWeight: 600, cursor: "pointer",
     border:     type === "cancel" ? "1px solid rgba(255,255,255,0.2)" : "none",
     background: type === "cancel" ? "transparent" : "linear-gradient(135deg,#22c55e,#16a34a)",
     color:      "#fff",
@@ -46,28 +67,23 @@ function actionBtnStyle(type: "cancel" | "confirm"): React.CSSProperties {
   };
 }
 
-export function PanZoomAdjuster({
-  photoUrl,
-  initialTransform,
-  onConfirm,
-  onClose,
-  photoR,
+// ── Inner content (pure logic, no portal awareness) ───────────
+function PanZoomContent({
+  photoUrl, initialTransform, onConfirm, onClose, photoR,
 }: PanZoomAdjusterProps) {
+  const previewSize = usePreviewSize();
 
-  // ─── State ────────────────────────────────────────────────────
-  // All pan/offset values are stored in CANVAS-SPACE (same as offsetX/offsetY).
-  // This means onConfirm passes them straight through — no conversion bugs.
-  const [zoom,      setZoom]      = useState(initialTransform.scale);
-  const [offsetX,   setOffsetX]   = useState(initialTransform.offsetX);
-  const [offsetY,   setOffsetY]   = useState(initialTransform.offsetY);
-  const [imgEl,     setImgEl]     = useState<HTMLImageElement | null>(null);
+  const [zoom,    setZoom]    = useState(initialTransform.scale);
+  const [offsetX, setOffsetX] = useState(initialTransform.offsetX);
+  const [offsetY, setOffsetY] = useState(initialTransform.offsetY);
+  const [imgEl,   setImgEl]   = useState<HTMLImageElement | null>(null);
 
-  // Preview canvas ref — we draw on it exactly like TemplatePreview does
-  const previewCanvasRef = useRef<HTMLCanvasElement>(null);
-  const isDragging       = useRef(false);
-  const lastPos          = useRef({ x: 0, y: 0 });
+  const previewCanvasRef  = useRef<HTMLCanvasElement>(null);
+  const isDragging        = useRef(false);
+  const lastPos           = useRef({ x: 0, y: 0 });
+  const lastPinchDist     = useRef<number | null>(null);
 
-  // ─── Load image once ──────────────────────────────────────────
+  // ─── Load image ───────────────────────────────────────────────
   useEffect(() => {
     const img = new Image();
     img.crossOrigin = "anonymous";
@@ -75,51 +91,37 @@ export function PanZoomAdjuster({
     img.src = photoUrl;
   }, [photoUrl]);
 
-  // ─── Draw preview canvas ──────────────────────────────────────
-  // This is the EXACT same math as TemplatePreview canvas render,
-  // just scaled to PREVIEW_SIZE instead of PHOTO_R*2.
+  // ─── Draw canvas ──────────────────────────────────────────────
   useEffect(() => {
     const canvas = previewCanvasRef.current;
     if (!canvas || !imgEl) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const D    = PREVIEW_SIZE;                                         // preview circle diameter
-    const base = Math.max(D / imgEl.naturalWidth, D / imgEl.naturalHeight); // cover
-    const fs   = base * zoom;                                          // final scale
-    const sw   = imgEl.naturalWidth  * fs;
-    const sh   = imgEl.naturalHeight * fs;
-
-    // offsetX/offsetY are in canvas-space → scale to preview-space
-    const canvasDiameter = photoR * 2;
-    const previewScale   = D / canvasDiameter;  // how preview-px maps to canvas-px
-    const px = offsetX * previewScale;
-    const py = offsetY * previewScale;
-
-    const dx = D / 2 - sw / 2 + px;
-    const dy = D / 2 - sh / 2 + py;
+    const D            = previewSize;
+    const previewScale = D / (photoR * 2);
+    const base         = Math.max(D / imgEl.naturalWidth, D / imgEl.naturalHeight);
+    const fs           = base * zoom;
+    const sw           = imgEl.naturalWidth  * fs;
+    const sh           = imgEl.naturalHeight * fs;
+    const dx           = D / 2 - sw / 2 + offsetX * previewScale;
+    const dy           = D / 2 - sh / 2 + offsetY * previewScale;
 
     canvas.width  = D;
     canvas.height = D;
     ctx.clearRect(0, 0, D, D);
-
-    // Clip to circle
     ctx.save();
     ctx.beginPath();
     ctx.arc(D / 2, D / 2, D / 2, 0, Math.PI * 2);
     ctx.clip();
     ctx.drawImage(imgEl, dx, dy, sw, sh);
     ctx.restore();
-  }, [imgEl, zoom, offsetX, offsetY, photoR]);
+  }, [imgEl, zoom, offsetX, offsetY, photoR, previewSize]);
 
-  // ─── Clamping in canvas-space ─────────────────────────────────
+  // ─── Helpers ──────────────────────────────────────────────────
+  const cssToCanvas = (photoR * 2) / previewSize;
+
   const clampOffset = useCallback((cx: number, cy: number, z: number) => {
-    // At a given zoom, max canvas-space offset = (photoR) * (z - 0.5) * 2 ... 
-    // More precisely: the image covers the circle at z=1.
-    // Max pan = half the "overhang" on each side.
-    // overhang (canvas-px) = (naturalDim * base * z - D) / 2  where D = photoR*2
-    // We don't have naturalSize here easily, so use a generous bound:
-    // Allow panning up to photoR * z in each direction (feels natural)
     const maxC = photoR * z;
     return {
       x: Math.max(-maxC, Math.min(maxC, cx)),
@@ -127,80 +129,84 @@ export function PanZoomAdjuster({
     };
   }, [photoR]);
 
-  // ─── Pointer events ───────────────────────────────────────────
-  // Pointer moves in CSS-px → convert to canvas-px
-  const cssToCanvas = (photoR * 2) / PREVIEW_SIZE;
+  const applyZoom = useCallback((nz: number) => {
+    const clamped = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, parseFloat(nz.toFixed(2))));
+    setZoom(clamped);
+    setOffsetX((ox) => clampOffset(ox, 0, clamped).x);
+    setOffsetY((oy) => clampOffset(0, oy, clamped).y);
+  }, [clampOffset]);
 
+  // ─── Pointer (drag) ───────────────────────────────────────────
   const handlePointerDown = (e: React.PointerEvent) => {
+    if (!e.isPrimary) return;
     isDragging.current = true;
     lastPos.current    = { x: e.clientX, y: e.clientY };
     e.currentTarget.setPointerCapture(e.pointerId);
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (!isDragging.current) return;
+    if (!isDragging.current || !e.isPrimary) return;
     const dx = (e.clientX - lastPos.current.x) * cssToCanvas;
     const dy = (e.clientY - lastPos.current.y) * cssToCanvas;
     lastPos.current = { x: e.clientX, y: e.clientY };
-    setOffsetX((ox) => {
-      const nx = ox + dx;
-      return clampOffset(nx, 0, zoom).x;
-    });
-    setOffsetY((oy) => {
-      const ny = oy + dy;
-      return clampOffset(0, ny, zoom).y;
-    });
+    setOffsetX((ox) => clampOffset(ox + dx, 0, zoom).x);
+    setOffsetY((oy) => clampOffset(0, oy + dy, zoom).y);
   };
 
   const handlePointerUp = () => { isDragging.current = false; };
 
-
-
-  const handleZoomIn = () =>
+  // ─── Touch (pinch zoom) ───────────────────────────────────────
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length !== 2) return;
+    e.preventDefault();
+    const [t1, t2] = [e.touches[0], e.touches[1]];
+    const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+    if (lastPinchDist.current === null) { lastPinchDist.current = dist; return; }
+    const delta = dist - lastPinchDist.current;
+    lastPinchDist.current = dist;
     setZoom((z) => {
-      const nz = Math.min(MAX_ZOOM, parseFloat((z + ZOOM_STEP).toFixed(2)));
+      const nz = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, parseFloat((z + delta * 0.005).toFixed(2))));
       setOffsetX((ox) => clampOffset(ox, 0, nz).x);
       setOffsetY((oy) => clampOffset(0, oy, nz).y);
       return nz;
     });
+  }, [clampOffset]);
 
-  const handleZoomOut = () =>
-    setZoom((z) => {
-      const nz = Math.max(MIN_ZOOM, parseFloat((z - ZOOM_STEP).toFixed(2)));
-      setOffsetX((ox) => clampOffset(ox, 0, nz).x);
-      setOffsetY((oy) => clampOffset(0, oy, nz).y);
-      return nz;
-    });
+  const handleTouchEnd = () => { lastPinchDist.current = null; };
 
-  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const nz = parseFloat(e.target.value);
-    setZoom(nz);
-    setOffsetX((ox) => clampOffset(ox, 0, nz).x);
-    setOffsetY((oy) => clampOffset(0, oy, nz).y);
-  };
-
-  const handleConfirm = () =>
-    onConfirm({ scale: zoom, offsetX, offsetY });
+  const handleReset   = () => { setZoom(1); setOffsetX(0); setOffsetY(0); };
+  const handleConfirm = () => onConfirm({ scale: zoom, offsetX, offsetY });
 
   const zoomPercent = Math.round(zoom * 100);
-  // Display offsets in preview-px for human readability
-  const displayX = Math.round(offsetX / cssToCanvas);
-  const displayY = Math.round(offsetY / cssToCanvas);
+  const displayX    = Math.round(offsetX / cssToCanvas);
+  const displayY    = Math.round(offsetY / cssToCanvas);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+    // Outer: centers everything, full height scroll if needed
+    <div style={{
+      display: "flex", flexDirection: "column", alignItems: "center",
+      gap: 14, width: "100%",
+      padding: "20px 20px 28px",
+      boxSizing: "border-box",
+    }}>
 
-      {/* ── Preview circle — uses a real canvas with identical drawImage math ── */}
+      {/* Title */}
+      <p style={{ color: "#fff", fontWeight: 700, fontSize: 15, margin: 0 }}>
+        Adjust Photo
+      </p>
+
+      {/* Preview circle */}
       <div
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
         style={{
-          width: PREVIEW_SIZE, height: PREVIEW_SIZE,
+          width: previewSize, height: previewSize, flexShrink: 0,
           borderRadius: "50%", overflow: "hidden",
-          cursor: "grab",
-          position: "relative", touchAction: "none", flexShrink: 0,
+          cursor: "grab", position: "relative", touchAction: "none",
           boxShadow: "0 0 0 3px rgba(255,255,255,0.25), 0 0 0 6px rgba(255,255,255,0.08)",
         }}
       >
@@ -213,37 +219,42 @@ export function PanZoomAdjuster({
         )}
         <canvas
           ref={previewCanvasRef}
-          style={{
-            width:  PREVIEW_SIZE,
-            height: PREVIEW_SIZE,
-            display: imgEl ? "block" : "none",
-          }}
+          style={{ width: previewSize, height: previewSize, display: imgEl ? "block" : "none" }}
         />
       </div>
 
-      <p style={{ color: "rgba(255,255,255,0.38)", fontSize: 10, margin: 0, display: "flex", alignItems: "center", gap: 4 }}>
-        <Move size={10} /> Drag to reposition · Scroll or pinch to zoom
+      {/* Hint */}
+      <p style={{
+        color: "rgba(255,255,255,0.38)", fontSize: 10, margin: 0,
+        display: "flex", alignItems: "center", gap: 4,
+      }}>
+        <Move size={10} /> Drag · Pinch to zoom
       </p>
 
-      {/* ── Zoom controls ── */}
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, width: "100%" }}>
+      {/* Controls */}
+      <div style={{
+        display: "flex", flexDirection: "column", gap: 8,
+        width: "100%", maxWidth: previewSize + 40,
+      }}>
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: PREVIEW_SIZE, color: "rgba(255,255,255,0.7)", fontSize: 11 }}>
+        {/* Zoom label + badge */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          color: "rgba(255,255,255,0.7)", fontSize: 11,
+        }}>
           <span style={{ fontWeight: 600, letterSpacing: "0.04em" }}>ZOOM</span>
           <span style={{
             background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)",
             borderRadius: 6, padding: "2px 8px", fontWeight: 700,
             fontVariantNumeric: "tabular-nums", minWidth: 50, textAlign: "center",
-          }}>
-            {zoomPercent}%
-          </span>
+          }}>{zoomPercent}%</span>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 8, width: PREVIEW_SIZE }}>
-          <button onClick={handleZoomOut} disabled={zoom <= MIN_ZOOM} style={iconBtnStyle(zoom <= MIN_ZOOM)} title="Zoom out">
+        {/* Slider row */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button onClick={() => applyZoom(zoom - ZOOM_STEP)} disabled={zoom <= MIN_ZOOM} style={iconBtnStyle(zoom <= MIN_ZOOM)}>
             <ZoomOut size={14} />
           </button>
-
           <div style={{ flex: 1, position: "relative", height: 20, display: "flex", alignItems: "center" }}>
             <div style={{
               position: "absolute", left: 0, height: 3,
@@ -253,25 +264,26 @@ export function PanZoomAdjuster({
             }} />
             <input
               type="range" min={MIN_ZOOM} max={MAX_ZOOM} step={0.01} value={zoom}
-              onChange={handleSliderChange}
+              onChange={(e) => applyZoom(parseFloat(e.target.value))}
               style={{ width: "100%", cursor: "pointer", accentColor: "#22c55e", background: "transparent" }}
             />
           </div>
-
-          <button onClick={handleZoomIn} disabled={zoom >= MAX_ZOOM} style={iconBtnStyle(zoom >= MAX_ZOOM)} title="Zoom in">
+          <button onClick={() => applyZoom(zoom + ZOOM_STEP)} disabled={zoom >= MAX_ZOOM} style={iconBtnStyle(zoom >= MAX_ZOOM)}>
             <ZoomIn size={14} />
           </button>
         </div>
 
         {/* Readouts */}
-        <div style={{ display: "flex", gap: 6, width: PREVIEW_SIZE }}>
+        <div style={{ display: "flex", gap: 6 }}>
           {([
-            { label: "X offset", value: displayX, unit: "px" },
-            { label: "Y offset", value: displayY, unit: "px" },
+            { label: "X offset", value: displayX,    unit: "px" },
+            { label: "Y offset", value: displayY,    unit: "px" },
+            { label: "Zoom",     value: zoomPercent, unit: "%"  },
           ] as const).map(({ label, value, unit }) => (
             <div key={label} style={{
-              flex: 1, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: 8, padding: "5px 10px", textAlign: "center",
+              flex: 1, minWidth: 0,
+              background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 8, padding: "5px 6px", textAlign: "center",
             }}>
               <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 9, letterSpacing: "0.05em", marginBottom: 2 }}>{label}</div>
               <div style={{ color: "#fff", fontSize: 12, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
@@ -280,33 +292,52 @@ export function PanZoomAdjuster({
               </div>
             </div>
           ))}
-          <div style={{
-            flex: 1, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: 8, padding: "5px 10px", textAlign: "center",
-          }}>
-            <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 9, letterSpacing: "0.05em", marginBottom: 2 }}>Zoom</div>
-            <div style={{ color: "#fff", fontSize: 12, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
-              {zoomPercent}<span style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", marginLeft: 1 }}>%</span>
-            </div>
-          </div>
         </div>
 
-        <button
-          onClick={() => { setZoom(1); setOffsetX(0); setOffsetY(0); }}
-          style={{
-            background: "none", border: "1px solid rgba(255,255,255,0.12)",
-            color: "rgba(255,255,255,0.5)", borderRadius: 6, fontSize: 10,
-            padding: "4px 12px", cursor: "pointer", letterSpacing: "0.05em",
-          }}
-        >
+        {/* Reset */}
+        <button onClick={handleReset} style={{
+          background: "none", border: "1px solid rgba(255,255,255,0.12)",
+          color: "rgba(255,255,255,0.5)", borderRadius: 6, fontSize: 10,
+          padding: "5px 12px", cursor: "pointer", letterSpacing: "0.05em",
+          alignSelf: "center",
+        }}>
           Reset position
         </button>
       </div>
 
+      {/* Actions */}
       <div style={{ display: "flex", gap: 8 }}>
-        <button onClick={onClose}       style={actionBtnStyle("cancel")}><X     size={13} /> Cancel</button>
+        <button onClick={onClose}      style={actionBtnStyle("cancel")} ><X     size={13} /> Cancel</button>
         <button onClick={handleConfirm} style={actionBtnStyle("confirm")}><Check size={13} /> Apply</button>
       </div>
     </div>
+  );
+}
+
+// ── Public export — renders via portal into document.body ─────
+// Card ke DOM mein bilkul nahi, full viewport pe apna overlay hai.
+export function PanZoomAdjuster(props: PanZoomAdjusterProps) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  if (!mounted) return null;
+
+  return createPortal(
+    // Backdrop: full-screen, scrollable agar content zyada ho
+    <div
+      style={{
+        position: "fixed", inset: 0, zIndex: 9999,
+        background: "rgba(0,0,0,0.88)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        overflowY: "auto",
+        // iOS safari ke liye safe-area respect karo
+        paddingTop:    "env(safe-area-inset-top,    0px)",
+        paddingBottom: "env(safe-area-inset-bottom, 16px)",
+      }}
+      // Backdrop click se close
+      onPointerDown={(e) => { if (e.target === e.currentTarget) props.onClose(); }}
+    >
+      <PanZoomContent {...props} />
+    </div>,
+    document.body,
   );
 }

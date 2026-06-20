@@ -20,7 +20,7 @@ const MAX_MESSAGE_LENGTH   = 200;
 export interface EditableCard {
   id:            string;
   imageUrl:      string;
-  cardType:      string;
+  categoryName:      string;
   recipientName: string;
   createdAt:     string;
   nameColor:     string;    
@@ -71,7 +71,7 @@ export function EditCardModal({ card, open, onClose, onSaved }: EditCardModalPro
       body: JSON.stringify({
         recipientName,
         message,
-        cardType: card.cardType,
+        categoryName: card.categoryName,
       }),
     });
 
@@ -109,7 +109,7 @@ const handleDownload = useCallback(async () => {
 
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${recipientName || "card"}-${card?.cardType}.png`;
+    a.download = `${recipientName || "card"}-${card?.categoryName}.png`;
 
     document.body.appendChild(a);
     a.click();
@@ -177,7 +177,7 @@ const handleDownload = useCallback(async () => {
             {/* Card type badge */}
             <div className="flex items-center gap-2">
               <span className="rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-medium capitalize text-violet-700">
-                {card.cardType}
+                {card.categoryName}
               </span>
               <span className="text-xs text-muted-foreground">{card.createdAt}</span>
             </div>

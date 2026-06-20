@@ -1,12 +1,14 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
-import { CardTypeSelector, type CardType } from "../../components/CardTypeSelector";
+import { CardTypeSelector, type Category } from "../../components/CardTypeSelector";
 import { TemplateGrid, type Template } from "./TemplateGrid";
 
 interface TemplatesTabContentProps {
-  cardType: CardType;
-  onCardTypeChange: (t: CardType) => void;
+  categories: Category[];
+  isLoadingCategories: boolean;
+  selectedCategoryId: string;
+  onCategoryChange: (id: string) => void;
   isLoading: boolean;
   templates: Template[];
   selectedId: string | null;
@@ -14,7 +16,14 @@ interface TemplatesTabContentProps {
 }
 
 export function TemplatesTabContent({
-  cardType, onCardTypeChange, isLoading, templates, selectedId, onSelect,
+  categories,
+  isLoadingCategories,
+  selectedCategoryId,
+  onCategoryChange,
+  isLoading,
+  templates,
+  selectedId,
+  onSelect,
 }: TemplatesTabContentProps) {
   return (
     <div className="flex flex-col gap-3">
@@ -22,7 +31,12 @@ export function TemplatesTabContent({
         <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
           Card Type
         </p>
-        <CardTypeSelector selected={cardType} onSelect={onCardTypeChange} />
+        <CardTypeSelector
+          categories={categories}
+          isLoading={isLoadingCategories}
+          selected={selectedCategoryId}
+          onSelect={onCategoryChange}
+        />
       </div>
 
       <div className="rounded-xl border border-border/60 bg-card p-3 shadow-sm">

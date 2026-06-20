@@ -152,7 +152,7 @@ export function OverlayConfigurator({ imageUrl, config, onChange }: OverlayConfi
           }}
         >
           <span style={{ fontSize: 11, color: "#fff", fontWeight: 700, textShadow: "0 1px 3px rgba(0,0,0,0.8)", pointerEvents: "none" }}>
-            📷 Photo
+            Photo
           </span>
         </div>
 
@@ -268,17 +268,17 @@ export function OverlayConfigurator({ imageUrl, config, onChange }: OverlayConfi
       {/* Coord readout */}
       <div className="grid grid-cols-3 gap-2 text-[11px] text-gray-500">
         <div className="bg-gray-50 rounded-lg px-3 py-2">
-          <p className="font-semibold text-gray-700 mb-0.5">📷 Photo</p>
+          <p className="font-semibold text-gray-700 mb-0.5">Photo</p>
           <p>x: {config.photo.x} · y: {config.photo.y}</p>
           <p>r: {config.photo.r}px</p>
         </div>
         <div className="bg-gray-50 rounded-lg px-3 py-2">
-          <p className="font-semibold text-gray-700 mb-0.5">✏️ Name</p>
+          <p className="font-semibold text-gray-700 mb-0.5">Name</p>
           <p>x: {config.recipientName.x} · y: {config.recipientName.y}</p>
           <p>size: {config.recipientName.fontSize}px</p>
         </div>
         <div className="bg-gray-50 rounded-lg px-3 py-2">
-          <p className="font-semibold text-gray-700 mb-0.5">💬 Message</p>
+          <p className="font-semibold text-gray-700 mb-0.5">Message</p>
           <p>x: {config.message.x} · y: {config.message.y}</p>
           <p>size: {config.message.fontSize}px</p>
         </div>
@@ -286,6 +286,15 @@ export function OverlayConfigurator({ imageUrl, config, onChange }: OverlayConfi
 
       {/* Font size sliders */}
       <div className="space-y-2">
+                <div className="flex items-center gap-3">
+          <span className="text-xs text-gray-600 w-24 shrink-0">Photo r: <b>{config.photo.r}px</b></span>
+          <input
+            type="range" min={80} max={400} step={10}
+            value={config.photo.r}
+            onChange={(e) => onChange({ ...config, photo: { ...config.photo, r: Number(e.target.value) } })}
+            className="flex-1 accent-indigo-600"
+          />
+        </div>
         <div className="flex items-center gap-3">
           <span className="text-xs text-gray-600 w-24 shrink-0">Name size: <b>{config.recipientName.fontSize}px</b></span>
           <input
@@ -301,15 +310,6 @@ export function OverlayConfigurator({ imageUrl, config, onChange }: OverlayConfi
             type="range" min={14} max={60} step={2}
             value={config.message.fontSize}
             onChange={(e) => onChange({ ...config, message: { ...config.message, fontSize: Number(e.target.value) } })}
-            className="flex-1 accent-indigo-600"
-          />
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-gray-600 w-24 shrink-0">Photo r: <b>{config.photo.r}px</b></span>
-          <input
-            type="range" min={80} max={400} step={10}
-            value={config.photo.r}
-            onChange={(e) => onChange({ ...config, photo: { ...config.photo, r: Number(e.target.value) } })}
             className="flex-1 accent-indigo-600"
           />
         </div>

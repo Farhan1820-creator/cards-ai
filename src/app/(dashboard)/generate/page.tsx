@@ -1,12 +1,19 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef, startTransition, Suspense } from "react";
+import {
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+  startTransition,
+  Suspense,
+} from "react";
 import { Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useSearchParams } from "next/navigation";
 
-import { type CardType } from "@/app/(dashboard)/generate/SidebarPanels/components/CardTypeSelector";
+// CardType import sirf AI sidebar ke liye raha
 import { type CardStyle } from "@/app/(dashboard)/generate/SidebarPanels/components/StyleSelector";
 import { type ColorTheme } from "@/app/(dashboard)/generate/SidebarPanels/components/ColorThemeSelector";
 import { type ToneType } from "@/app/(dashboard)/generate/SidebarPanels/components/CustomCardType";
@@ -38,14 +45,23 @@ type InitialValues = {
   photoTransform: { scale: number; offsetX: number; offsetY: number };
 };
 
+export interface Category {
+  id: string;
+  name: string;
+}
+
 // ─── Main content component ───────────────────────────────────────────────────
 function GeneratePageContent() {
   const searchParams = useSearchParams();
 
   const [mode, setMode] = useState<GeneratorMode>("template");
-  const [tmplCardType, setTmplCardType] = useState<CardType>(
-    (searchParams.get("cardType") as CardType) ?? "birthday"
-  );
+
+  // ── Categories ──────────────────────────────────────────────────────────────
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
+
+  // ── Template mode state ──────────────────────────────────────────────────────
   const [tmplRecipientName, setTmplRecipientName] = useState(
     searchParams.get("recipientName") ?? ""
   );
@@ -58,9 +74,11 @@ function GeneratePageContent() {
   const [messageColor, setMessageColor] = useState(
     searchParams.get("messageColor") ?? DEFAULT_MSG_CLR
   );
-  const [photoTransform, setPhotoTransform] = useState(
-    { scale: 1, offsetX: 0, offsetY: 0 }
-  );
+  const [photoTransform, setPhotoTransform] = useState({
+    scale: 1,
+    offsetX: 0,
+    offsetY: 0,
+  });
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [isLoadingTemplates, setIsLoadingTemplates] = useState(true);
@@ -73,7 +91,9 @@ function GeneratePageContent() {
   );
   const [fetchedTemplateId, setFetchedTemplateId] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
-  const [aiCardType, setAiCardType] = useState<CardType>("birthday");
+
+  // ── AI mode state ────────────────────────────────────────────────────────────
+  const [aiCardType, setAiCardType] = useState<string>("");
   const [style, setStyle] = useState<CardStyle>("modern");
   const [colorTheme, setColorTheme] = useState<ColorTheme>("pastel");
   const [primaryColor, setPrimaryColor] = useState(DEFAULT_PRIMARY);
@@ -84,6 +104,7 @@ function GeneratePageContent() {
   const [customTone, setCustomTone] = useState<ToneType>("friendly");
   const [includeCustomMsg, setIncludeCustomMsg] = useState(false);
   const [customMsgText, setCustomMsgText] = useState("");
+  const [message, setMessage] = useState("");
   const [prompt, setPrompt] = useState("");
   const [aiRecipientName, setAiRecipientName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -99,33 +120,60 @@ function GeneratePageContent() {
     photoTransform: { scale: 1, offsetX: 0, offsetY: 0 },
   });
 
+  // ── 1. Categories — ek baar fetch ───────────────────────────────────────────
+ useEffect(() => {
+  async function loadCategories() {
+    try {
+      const res = await fetch("/api/user/categories");
+      const data = await res.json();
+      setCategories(data ?? []);
+
+      // URL mein categoryId param ho toh set karo
+      const urlCategoryId = searchParams.get("categoryId");
+      if (urlCategoryId) {
+        setSelectedCategoryId(urlCategoryId);
+      }
+    } catch {
+      console.error("Failed to load categories");
+    } finally {
+      setIsLoadingCategories(false);
+    }
+  }
+  loadCategories();
+}, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── 2. Card data load (editing flow) ────────────────────────────────────────
   useEffect(() => {
     const cardId = searchParams.get("cardId");
     if (!cardId) return;
+
     async function loadCardData() {
       try {
         const res = await fetch(`/api/user/cards/${cardId}`);
         const data = await res.json();
         const card = data.card || data;
+
         if (card) {
-          setTmplCardType((card.cardType as CardType) ?? "birthday");
           setTmplRecipientName(card.recipientName ?? "");
-          setTmplMessage(card.message ?? card.prompt ?? "");
+          setTmplMessage(card.message ?? "");
           setNameColor(card.nameColor ?? DEFAULT_NAME_CLR);
           setMessageColor(card.messageColor ?? DEFAULT_MSG_CLR);
           setExistingCardUrl(card.imageUrl ?? null);
           setExistingCardId(card.id ?? null);
           setPhotoUrl(card.photoUrl ?? null);
           setFetchedTemplateId(card.templateId ?? null);
-          setPhotoTransform(card.photoTransform ?? { scale: 1, offsetX: 0, offsetY: 0 });
+          setPhotoTransform(
+            card.photoTransform ?? { scale: 1, offsetX: 0, offsetY: 0 }
+          );
           initialValuesRef.current = {
             recipientName: card.recipientName ?? "",
-            message: card.message ?? card.prompt ?? "",
+            message: card.message ?? "",
             nameColor: card.nameColor ?? DEFAULT_NAME_CLR,
             messageColor: card.messageColor ?? DEFAULT_MSG_CLR,
             photoUrl: card.photoUrl ?? null,
             templateId: card.templateId ?? "",
-            photoTransform: card.photoTransform ?? { scale: 1, offsetX: 0, offsetY: 0 },
+            photoTransform:
+              card.photoTransform ?? { scale: 1, offsetX: 0, offsetY: 0 },
           };
         } else {
           toast.error("Card data not found!");
@@ -135,83 +183,86 @@ function GeneratePageContent() {
         toast.error("Failed to load card data");
       }
     }
+
     loadCardData();
   }, [searchParams]);
 
-  // hasChanges useEffect — existingCardId condition hata do
-useEffect(() => {
-  const init = initialValuesRef.current;
-  if (!init.templateId) return; // save se pehle track mat karo
+  // ── 3. hasChanges tracker ────────────────────────────────────────────────────
+  useEffect(() => {
+    const init = initialValuesRef.current;
+    if (!init.templateId) return;
 
-  const currentTemplateId = selectedTemplate?.id ?? "";
-  const transformChanged =
-    photoTransform.scale   !== init.photoTransform.scale   ||
-    photoTransform.offsetX !== init.photoTransform.offsetX ||
-    photoTransform.offsetY !== init.photoTransform.offsetY;
+    const currentTemplateId = selectedTemplate?.id ?? "";
+    const transformChanged =
+      photoTransform.scale   !== init.photoTransform.scale   ||
+      photoTransform.offsetX !== init.photoTransform.offsetX ||
+      photoTransform.offsetY !== init.photoTransform.offsetY;
 
-  const isChanged = (
-    tmplRecipientName !== init.recipientName ||
-    tmplMessage       !== init.message       ||
-    nameColor         !== init.nameColor     ||
-    messageColor      !== init.messageColor  ||
-    photoUrl          !== init.photoUrl      ||
-    currentTemplateId !== init.templateId    ||
-    transformChanged
-  );
-  setHasChanges(isChanged);
-}, [
-  tmplRecipientName, tmplMessage, nameColor, messageColor,
-  photoUrl, selectedTemplate?.id, photoTransform, existingCardId,
-]);
+    const isChanged =
+      tmplRecipientName !== init.recipientName ||
+      tmplMessage       !== init.message       ||
+      nameColor         !== init.nameColor     ||
+      messageColor      !== init.messageColor  ||
+      photoUrl          !== init.photoUrl      ||
+      currentTemplateId !== init.templateId    ||
+      transformChanged;
 
+    setHasChanges(isChanged);
+  }, [
+    tmplRecipientName, tmplMessage, nameColor, messageColor,
+    photoUrl, selectedTemplate?.id, photoTransform, existingCardId,
+  ]);
+
+  // ── 4. Templates — selectedCategoryId change pe fetch ───────────────────────
   useEffect(() => {
     async function loadTemplates() {
       try {
-const categories = ["birthday", "wedding", "anniversary", "invitation", "eid", "custom"];        const results = await Promise.all(
-          categories.map((c) =>
-            fetch(`/api/user/templates?category=${c}`).then((r) => r.json())
-          )
-        );
-        setTemplates(results.flat());
-      } catch (e) {
-        console.error("Failed to load templates", e);
+        setIsLoadingTemplates(true);
+        const url =
+          selectedCategoryId === "all"
+            ? "/api/user/templates"
+            : `/api/user/templates?categoryId=${selectedCategoryId}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        setTemplates(data || []);
+      } catch {
+        console.error("Failed to load templates");
+        setTemplates([]);
       } finally {
         setIsLoadingTemplates(false);
       }
     }
     loadTemplates();
-  }, []);
+  }, [selectedCategoryId]);
 
+  // ── 5. Auto-select template from URL params ──────────────────────────────────
   useEffect(() => {
     if (isLoadingTemplates || templates.length === 0) return;
+
     const urlTemplateId = searchParams.get("templateId") ?? fetchedTemplateId ?? "";
-    const urlCardType = searchParams.get("cardType") as CardType;
     if (urlTemplateId) {
       const exactMatch = templates.find((t) => t.id === urlTemplateId);
       if (exactMatch) {
         startTransition(() => setSelectedTemplate(exactMatch));
-        return;
       }
-    }
-    if (urlCardType) {
-      const catMatch = templates.find(
-        (t) => t.category.toLowerCase().trim() === urlCardType.toLowerCase().trim()
-      );
-      if (catMatch) startTransition(() => setSelectedTemplate(catMatch));
     }
   }, [isLoadingTemplates, templates, searchParams, fetchedTemplateId]);
 
+  // ── Handlers ─────────────────────────────────────────────────────────────────
   const handlePhotoChange = useCallback((url: string | null) => {
     if (!url || url.startsWith("data:")) { setPhotoUrl(url); return; }
     if (url.startsWith("blob:")) {
       fetch(url)
         .then((r) => r.blob())
-        .then((blob) => new Promise<string>((res, rej) => {
-          const reader = new FileReader();
-          reader.onload  = () => res(reader.result as string);
-          reader.onerror = rej;
-          reader.readAsDataURL(blob);
-        }))
+        .then(
+          (blob) =>
+            new Promise<string>((res, rej) => {
+              const reader = new FileReader();
+              reader.onload  = () => res(reader.result as string);
+              reader.onerror = rej;
+              reader.readAsDataURL(blob);
+            })
+        )
         .then((base64) => setPhotoUrl(base64))
         .catch(() => toast.error("Photo load failed"));
       return;
@@ -219,16 +270,17 @@ const categories = ["birthday", "wedding", "anniversary", "invitation", "eid", "
     setPhotoUrl(url);
   }, []);
 
-  const handleTmplCardTypeChange = useCallback((t: CardType) => {
-    setTmplCardType(t);
+  const handleCategoryChange = useCallback((id: string) => {
+    setSelectedCategoryId(id);
     setSelectedTemplate(null);
   }, []);
 
   const handleTmplReset = useCallback(() => {
-    setTmplCardType("birthday");
+    setSelectedCategoryId("all");
     setSelectedTemplate(null);
     setPhotoUrl(null);
     setTmplRecipientName("");
+    setMessage("");
     setTmplMessage("");
     setNameColor(DEFAULT_NAME_CLR);
     setMessageColor(DEFAULT_MSG_CLR);
@@ -236,21 +288,27 @@ const categories = ["birthday", "wedding", "anniversary", "invitation", "eid", "
     setPhotoTransform({ scale: 1, offsetX: 0, offsetY: 0 });
   }, []);
 
-  const handleCardSaved = useCallback((savedCardId?: string) => {
-  if (savedCardId && !existingCardId) {
-    setExistingCardId(savedCardId); 
-  }
-  initialValuesRef.current = {
-    recipientName: tmplRecipientName,
-    message: tmplMessage,
-    nameColor,
-    messageColor,
-    photoUrl,
-    templateId: selectedTemplate?.id ?? "",
-    photoTransform,
-  };
-  setHasChanges(false);
-}, [tmplRecipientName, tmplMessage, nameColor, messageColor, photoUrl, selectedTemplate?.id, photoTransform, existingCardId]);
+  const handleCardSaved = useCallback(
+    (savedCardId?: string) => {
+      if (savedCardId && !existingCardId) {
+        setExistingCardId(savedCardId);
+      }
+      initialValuesRef.current = {
+        recipientName: tmplRecipientName,
+        message: tmplMessage,
+        nameColor,
+        messageColor,
+        photoUrl,
+        templateId: selectedTemplate?.id ?? "",
+        photoTransform,
+      };
+      setHasChanges(false);
+    },
+    [
+      tmplRecipientName, tmplMessage, nameColor, messageColor,
+      photoUrl, selectedTemplate?.id, photoTransform, existingCardId,
+    ]
+  );
 
   const handleAiGenerate = async () => {
     setIsLoading(true);
@@ -261,6 +319,7 @@ const categories = ["birthday", "wedding", "anniversary", "invitation", "eid", "
         body: JSON.stringify({
           cardType: aiCardType,
           recipientName: aiRecipientName,
+          message,
           style, colorTheme, primaryColor, secondaryColor, accentColor,
           prompt, customCardTitle, customOccasion,
           tone: customTone,
@@ -279,34 +338,24 @@ const categories = ["birthday", "wedding", "anniversary", "invitation", "eid", "
     }
   };
 
-// handleAiDownload ko format accept karne do
-const handleAiDownload = (format: "PNG" | "JPEG" | "PDF") => {
-  if (!previewUrl) return;
-  const filename = generateCardFilename(aiCardType, aiRecipientName);
+  const handleAiDownload = (format: "PNG" | "JPEG" | "PDF") => {
+    if (!previewUrl) return;
+    const filename = generateCardFilename(aiCardType, aiRecipientName);
+    if (format === "PDF") { toast.info("PDF export coming soon!"); return; }
+    const ext = format === "JPEG" ? "jpg" : "png";
+    downloadImage(previewUrl, `${filename}.${ext}`);
+    toast.success(`${format} downloaded!`);
+  };
 
-  if (format === "PDF") {
-    // PDF logic — jsPDF ya simple window.print()
-    toast.info("PDF export coming soon!");
-    return;
-  }
-
-  // PNG / JPEG dono ke liye same downloadImage, bas extension change
-  const ext = format === "JPEG" ? "jpg" : "png";
-  downloadImage(previewUrl, `${filename}.${ext}`);
-  toast.success(`${format} downloaded!`);
-};
-
-const handleShare = async () => {
-  if (!previewUrl) return;
-  if (navigator.share) {
-    try {
-      await navigator.share({ title: "My Card", url: previewUrl });
-    } catch {}
-  } else {
-    await navigator.clipboard.writeText(previewUrl);
-    toast.success("Link copied to clipboard!");
-  }
-};
+  const handleShare = async () => {
+    if (!previewUrl) return;
+    if (navigator.share) {
+      try { await navigator.share({ title: "My Card", url: previewUrl }); } catch {}
+    } else {
+      await navigator.clipboard.writeText(previewUrl);
+      toast.success("Link copied to clipboard!");
+    }
+  };
 
   const handleAiRegenerate = () => handleAiGenerate();
 
@@ -329,53 +378,60 @@ const handleShare = async () => {
 
   const canGenerate = prompt.trim().length > 0;
 
+  // ── JSX ──────────────────────────────────────────────────────────────────────
   return (
-  <div className="flex h-[100dvh] flex-col overflow-hidden bg-[#f8f7ff]">
+    <div className="flex h-[100dvh] flex-col overflow-hidden bg-[#f8f7ff]">
       {/* Header */}
       <div className="flex flex-wrap items-center gap-3 border-b border-border bg-white px-4 py-3 shadow-sm shrink-0 sm:px-6 sm:py-4">
-  <div>
-    <h1 className="text-lg font-bold leading-none text-primary sm:text-2xl">
-      Lets create amazing cards
-    </h1>
-    <p className="mt-0.5 text-xs text-muted-foreground">
-      Create beautiful greeting cards in seconds
-    </p>
-  </div>
-  <div className="ml-auto">
-    <ModeSelector mode={mode} onModeChange={setMode} />
-  </div>
-</div>
+        <div>
+          <h1 className="text-lg font-bold leading-none text-primary sm:text-2xl">
+            Lets create amazing cards
+          </h1>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Create beautiful greeting cards in seconds
+          </p>
+        </div>
+        <div className="ml-auto">
+          <ModeSelector mode={mode} onModeChange={setMode} />
+        </div>
+      </div>
 
- <div className="relative flex flex-1 overflow-hidden flex-col md:flex-row">
-        {mode === "template" ? (
-          <TemplateSidebarPanel
-            cardType={tmplCardType}
-            onCardTypeChange={handleTmplCardTypeChange}
-            templates={templates}
-            isTempLoading={isLoadingTemplates}
-            selectedTemplate={selectedTemplate}
-            onTemplateSelect={setSelectedTemplate}
-            recipientName={tmplRecipientName}
-            onRecipientNameChange={setTmplRecipientName}
-            message={tmplMessage}
-            onMessageChange={setTmplMessage}
-            nameColor={nameColor}
-            onNameColorChange={setNameColor}
-            messageColor={messageColor}
-            onMessageColorChange={setMessageColor}
-            photoUrl={photoUrl}
-            onPhotoChange={handlePhotoChange}
-            isEditing={!!existingCardId}
-          />
-        ) : (
-          <aside className="
-            w-full shrink-0 overflow-y-auto border-b border-border bg-white px-3 py-3
-            md:w-80 md:border-b-0 md:border-r md:py-4
-            max-h-[45vh] md:max-h-none
-          ">
-            <AISidebarPanel
-              cardType={aiCardType}
-              onCardTypeChange={setAiCardType}
+      <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
+        <aside className="
+          w-full shrink-0 overflow-y-auto border-b border-border bg-white px-3 py-3
+          md:w-80 md:border-b-0 md:border-r md:py-4
+          max-h-[45vh] md:max-h-none
+        ">
+          {mode === "template" ? (
+            <TemplateSidebarPanel
+              // category props — updated
+              categories={categories}
+              isLoadingCategories={isLoadingCategories}
+              selectedCategoryId={selectedCategoryId}
+              onCategoryChange={handleCategoryChange}
+              // rest same
+              templates={templates}
+              isTempLoading={isLoadingTemplates}
+              selectedTemplate={selectedTemplate}
+              onTemplateSelect={setSelectedTemplate}
+              recipientName={tmplRecipientName}
+              onRecipientNameChange={setTmplRecipientName}
+              message={tmplMessage}
+              onMessageChange={setTmplMessage}
+              nameColor={nameColor}
+              onNameColorChange={setNameColor}
+              messageColor={messageColor}
+              onMessageColorChange={setMessageColor}
+              photoUrl={photoUrl}
+              onPhotoChange={handlePhotoChange}
+              isEditing={!!existingCardId}
+            />
+          ) : (
+  <AISidebarPanel
+  categories={categories}
+  selectedCategoryId={selectedCategoryId}
+  onCategoryChange={handleCategoryChange}
+  isLoadingCategories={isLoadingCategories}              
               style={style}
               onStyleChange={setStyle}
               colorTheme={colorTheme}
@@ -401,17 +457,15 @@ const handleShare = async () => {
               recipientName={aiRecipientName}
               onRecipientNameChange={setAiRecipientName}
             />
-          </aside>
-        )}
+          )}
+        </aside>
 
-        <main
-          className={`flex flex-1 flex-col items-center justify-start overflow-y-auto px-4 py-4 gap-4 sm:px-8 sm:py-6 ${
-            mode === "template" ? "pb-20 md:pb-6" : ""
-          }`}
-        >          {mode === "template" ? (
+        <main className="flex flex-1 flex-col items-center justify-start overflow-y-auto px-4 py-4 gap-4 sm:px-8 sm:py-6">
+          {mode === "template" ? (
             <div className="w-full max-w-lg">
               <TemplateCardGenerator
-                cardType={tmplCardType}
+                categories={categories}
+                selectedCategoryId={selectedCategoryId} 
                 selectedTemplate={selectedTemplate}
                 photoUrl={photoUrl}
                 onRemovePhoto={() => setPhotoUrl(null)}
@@ -447,13 +501,13 @@ const handleShare = async () => {
                 <Wand2 className="mr-2 h-4 w-4" />
                 {isLoading ? "Generating..." : "Generate Card"}
               </Button>
-            <ActionButtons
-  hasPreview={!!previewUrl}
-  onDownload={handleAiDownload}
-  onRegenerate={handleAiRegenerate}
-  onReset={handleAiReset}
-  onShare={handleShare}
-/>
+              <ActionButtons
+                hasPreview={!!previewUrl}
+                onDownload={handleAiDownload}
+                onRegenerate={handleAiRegenerate}
+                onReset={handleAiReset}
+                onShare={handleShare}
+              />
             </div>
           )}
         </main>
@@ -462,14 +516,16 @@ const handleShare = async () => {
   );
 }
 
-// ─── Suspense wrapper — prerender fix ────────────────────────────────────────
+// ─── Suspense wrapper ─────────────────────────────────────────────────────────
 export default function GeneratePage() {
   return (
-    <Suspense fallback={
-      <div className="flex h-screen items-center justify-center bg-[#f8f7ff]">
-        <div className="h-7 w-7 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex h-screen items-center justify-center bg-[#f8f7ff]">
+          <div className="h-7 w-7 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
+        </div>
+      }
+    >
       <GeneratePageContent />
     </Suspense>
   );

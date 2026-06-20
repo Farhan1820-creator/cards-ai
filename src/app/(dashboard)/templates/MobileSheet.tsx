@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type TouchEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,19 +16,18 @@ interface Props {
   onUse: () => void;
 }
 
+
 export default function MobileSheet({ template, onClose, onUse }: Props) {
   const [open, setOpen] = useState(false);
 
   const sheetRef = useRef<HTMLDivElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const startY = useRef(0);
   const currentY = useRef(0);
   const startTime = useRef(0);
-
-  const isDragging = useRef(false);
-  const didDrag = useRef(false);
-
+  const dragMode = useRef(false); // true once this touch is confirmed as a close-drag
   const raf = useRef<number | null>(null);
 
   useEffect(() => {
@@ -37,101 +36,116 @@ export default function MobileSheet({ template, onClose, onUse }: Props) {
 
   const close = () => {
     setOpen(false);
-
     if (sheetRef.current) {
       sheetRef.current.style.transition = ANIMATION;
       sheetRef.current.style.transform = "translateY(100%)";
     }
-
     if (backdropRef.current) {
       backdropRef.current.style.transition = ANIMATION;
       backdropRef.current.style.opacity = "0";
     }
-
     setTimeout(onClose, 420);
   };
 
-  const onStart = (e: TouchEvent) => {
-    isDragging.current = true;
-    didDrag.current = false;
-
-    startY.current = e.touches[0].clientY;
-    startTime.current = Date.now();
-  };
-
-  const onMove = (e: TouchEvent) => {
-    if (!isDragging.current) return;
-
-    const y = e.touches[0].clientY;
-    let delta = y - startY.current;
-
-    if (delta < 0) delta = 0;
-
-    if (delta > 8) didDrag.current = true;
-
-    currentY.current = delta;
-
-    e.preventDefault();
-
-    if (raf.current) return;
-
-    raf.current = requestAnimationFrame(() => {
-      const height = window.innerHeight;
-
-      const progress = Math.min(delta / height, 1);
-      const eased = progress * progress;
-
-      if (sheetRef.current) {
-        sheetRef.current.style.transform = `translateY(${delta}px)`;
-      }
-
-      if (backdropRef.current) {
-        backdropRef.current.style.opacity = String(1 - eased);
-      }
-
-      raf.current = null;
-    });
-  };
-
-  const snapOrClose = (progress: number, velocity: number) => {
-    if (progress > CLOSE_THRESHOLD || velocity > VELOCITY_THRESHOLD) {
-      close();
-      return;
-    }
-
-    // snap back
+  const snapBack = () => {
     if (sheetRef.current) {
       sheetRef.current.style.transition = ANIMATION;
       sheetRef.current.style.transform = "translateY(0)";
     }
-
     if (backdropRef.current) {
       backdropRef.current.style.transition = ANIMATION;
       backdropRef.current.style.opacity = "1";
     }
   };
 
-  const onEnd = () => {
-    isDragging.current = false;
+  useEffect(() => {
+    const sheet = sheetRef.current;
+    const content = contentRef.current;
+    if (!sheet || !content) return;
 
-    const time = Date.now() - startTime.current;
-    const velocity = currentY.current / Math.max(time, 1);
-    const height = window.innerHeight;
+    const onTouchStart = (e: TouchEvent) => {
+      startY.current = e.touches[0].clientY;
+      startTime.current = Date.now();
+      currentY.current = 0;
+      dragMode.current = false;
+    };
 
-    const progress = currentY.current / height;
+    const onTouchMove = (e: TouchEvent) => {
+  const y = e.touches[0].clientY;
+  const rawDelta = y - startY.current;
 
-    snapOrClose(progress, velocity);
+  if (!dragMode.current) {
+    if (rawDelta > 0 && content.scrollTop <= 0) {
+      dragMode.current = true;
+      startY.current = y;
+      // 👇 drag start hote hi transition kill karo, taake 1:1 follow ho
+      sheet.style.transition = "none";
+      if (backdropRef.current) backdropRef.current.style.transition = "none";
+    } else {
+      return;
+    }
+  }
 
-    currentY.current = 0;
+      let delta = y - startY.current;
+      if (delta < 0) delta = 0;
+      currentY.current = delta;
 
-    setTimeout(() => {
-      didDrag.current = false;
-    }, 50);
-  };
+      e.preventDefault(); // stop scroll/bounce only once we're actually dragging
+
+      if (raf.current) return;
+      raf.current = requestAnimationFrame(() => {
+        const height = window.innerHeight;
+        const progress = Math.min(delta / height, 1);
+        const eased = progress * progress;
+
+        sheet.style.transform = `translateY(${delta}px)`;
+        if (backdropRef.current) {
+          backdropRef.current.style.opacity = String(1 - eased);
+        }
+        raf.current = null;
+      });
+    };
+
+    const onTouchEnd = () => {
+  // 👇 stale rAF cancel karo close/snapBack se pehle
+  if (raf.current) {
+    cancelAnimationFrame(raf.current);
+    raf.current = null;
+  }
+
+  if (!dragMode.current) return;
+
+  const time = Date.now() - startTime.current;
+  const velocity = currentY.current / Math.max(time, 1);
+  const height = window.innerHeight;
+  const progress = currentY.current / height;
+
+  if (progress > CLOSE_THRESHOLD || velocity > VELOCITY_THRESHOLD) {
+    close();
+  } else {
+    snapBack();
+  }
+
+  dragMode.current = false;
+  currentY.current = 0;
+};
+
+    sheet.addEventListener("touchstart", onTouchStart, { passive: true });
+    sheet.addEventListener("touchmove", onTouchMove, { passive: false });
+    sheet.addEventListener("touchend", onTouchEnd, { passive: true });
+    sheet.addEventListener("touchcancel", onTouchEnd, { passive: true });
+
+    return () => {
+      sheet.removeEventListener("touchstart", onTouchStart);
+      sheet.removeEventListener("touchmove", onTouchMove);
+      sheet.removeEventListener("touchend", onTouchEnd);
+      sheet.removeEventListener("touchcancel", onTouchEnd);
+      if (raf.current) cancelAnimationFrame(raf.current);
+    };
+  }, [close]);
 
   return (
     <>
-      {/* BACKDROP (FIXED CLICK BLOCKING) */}
       <div
         ref={backdropRef}
         className="fixed inset-0 z-50 bg-black/50"
@@ -143,7 +157,6 @@ export default function MobileSheet({ template, onClose, onUse }: Props) {
         onClick={close}
       />
 
-      {/* SHEET (ALWAYS ABOVE EVERYTHING) */}
       <div
         ref={sheetRef}
         className="fixed inset-x-0 bottom-0 z-[60] rounded-t-3xl bg-primary-foreground shadow-2xl overflow-hidden"
@@ -153,20 +166,15 @@ export default function MobileSheet({ template, onClose, onUse }: Props) {
           willChange: "transform",
           pointerEvents: "auto",
         }}
-        onTouchStart={onStart}
-        onTouchMove={onMove}
-        onTouchEnd={onEnd}
       >
-        {/* HANDLE */}
         <div className="flex justify-center pt-3 pb-2">
           <div className="h-1 w-12 rounded-full bg-border" />
         </div>
 
-        {/* CONTENT */}
-        <div className="overflow-y-auto max-h-[85vh]">
+        <div ref={contentRef} className="overflow-y-auto max-h-[85vh]">
           <div className="relative aspect-[3/2] w-full">
             <Image
-              src={template.thumbnail}
+              src={template.imageUrl}
               alt={template.name}
               fill
               className="object-cover"
@@ -187,23 +195,8 @@ export default function MobileSheet({ template, onClose, onUse }: Props) {
             </p>
 
             <div className="flex flex-col gap-2">
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (didDrag.current) return;
-                  onUse();
-                }}
-              >
-                Use Template
-              </Button>
-
-              <Button
-                variant="ghost"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  close();
-                }}
-              >
+              <Button onClick={onUse}>Use Template</Button>
+              <Button variant="ghost" onClick={close}>
                 Cancel
               </Button>
             </div>

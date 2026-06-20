@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import {  Check, Loader2} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { type CardType } from "./SidebarPanels/components/CardTypeSelector";
+import { type Category } from "./SidebarPanels/components/CardTypeSelector";
 import { type Template } from "./SidebarPanels/TemplateSidebarPanel/components/TemplateGrid";
 import { TemplatePreview } from "./TemplatePreview";
 import { toast } from "sonner";
@@ -12,9 +12,9 @@ import { generateCardFilename } from "@/lib/filename";
 import { downloadImage } from "@/lib/download-image";
 import Link from "next/link";
 
-
 interface TemplateCardGeneratorProps {
-  cardType: CardType;
+  categories: Category[];
+  selectedCategoryId: string; 
   selectedTemplate: Template | null;
   photoUrl: string | null;
   onRemovePhoto: () => void;
@@ -34,7 +34,8 @@ interface TemplateCardGeneratorProps {
 }
 
 export function TemplateCardGenerator({
-  cardType,
+  categories,
+  selectedCategoryId, 
   selectedTemplate,
   photoUrl,
   onRemovePhoto,
@@ -60,16 +61,44 @@ export function TemplateCardGenerator({
   const initialIsEditing = useRef(isEditing);
 
   const latestImageRef = useRef<string | null>(null);
+const selectedCategoryName =
+  categories.find((c) => c.id === selectedCategoryId)?.name ?? "card";
 
   const templateChosen = selectedTemplate !== null;
 const canGenerate = templateChosen; 
-  const handlePreviewReady = useCallback((dataUrl: string) => {
-    setFinalImage(dataUrl);
-    latestImageRef.current = dataUrl;
-  }, []);
+ const readyResolver = useRef<((url: string) => void) | null>(null);
+
+const handlePreviewReady = useCallback((dataUrl: string) => {
+  setFinalImage(dataUrl);
+  latestImageRef.current = dataUrl;
+  readyResolver.current?.(dataUrl);
+  readyResolver.current = null;
+}, []);
+
+const waitForPreview = useCallback(() => {
+  return new Promise<string>((resolve) => {
+    readyResolver.current = resolve;
+    // optional safety timeout, race ke against
+    setTimeout(() => resolve(latestImageRef.current ?? ""), 4000);
+  });
+}, []);
+
+const abortControllerRef = useRef<AbortController | null>(null);
+
+
+
+
+const autoSaveCardRef = useRef<((image: string) => Promise<void>) | null>(null);
 
 const autoSaveCard = useCallback(async (image: string) => {
   if (!selectedTemplate || !image) return;
+
+  abortControllerRef.current?.abort();
+  const controller = new AbortController();
+  abortControllerRef.current = controller;
+
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
+
   setIsSaving(true);
   try {
     const url = isEditing ? `/api/user/cards/${existingCardId}` : "/api/user/cards/generate/template";
@@ -79,13 +108,15 @@ const autoSaveCard = useCallback(async (image: string) => {
       method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        image, cardType, recipientName, message,
+        image, categories, recipientName, message,
         nameColor, messageColor, photoUrl,
         templateId: selectedTemplate.id,
         photoTransform,
       }),
+      signal: controller.signal,
     });
-    if (!res.ok) throw new Error();
+
+    if (!res.ok) throw new Error("save_failed");
     const data = await res.json();
 
     toast.success(
@@ -96,74 +127,84 @@ const autoSaveCard = useCallback(async (image: string) => {
         </Link>
       </span>
     );
-    onSaved?.(data.card?.id); // ← DB se aai reliable id
-  } catch {
-    toast.error("Could not auto-save (you can still download)");
+    onSaved?.(data.card?.id);
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      toast.error("Slow connection — save timed out. Try again?", {
+        // ✅ ref use karo — direct autoSaveCard nahi
+        action: { label: "Retry", onClick: () => autoSaveCardRef.current?.(image) },
+      });
+    } else {
+      toast.error("Could not auto-save (you can still download)");
+    }
   } finally {
+    clearTimeout(timeoutId);
     setIsSaving(false);
   }
-}, [isEditing, existingCardId, selectedTemplate, cardType, recipientName, message, nameColor, messageColor, photoUrl, photoTransform, onSaved]);
+}, [isEditing, existingCardId, selectedTemplate, categories, recipientName, message, nameColor, messageColor, photoUrl, photoTransform, onSaved]);
 
-  const handleGenerate = useCallback(async () => {
-    if (!canGenerate) return;
-    setIsLoading(true);
-    setIsGenerated(false);
-    
-    try {
-      await new Promise((r) => setTimeout(r, 1200)); // Simulated generation delay
-      setIsGenerated(true);
+// ✅ ref ko latest version pe point karo
+useEffect(() => {
+  autoSaveCardRef.current = autoSaveCard;
+}, [autoSaveCard]);
+// component unmount ya navigate away pe pending request cancel
+useEffect(() => {
+  return () => abortControllerRef.current?.abort();
+}, []);
 
-      const imageToSave = latestImageRef.current;
-      if (imageToSave) {
-        await autoSaveCard(imageToSave);
-      } else {
-        toast.error("Preview image not ready, try again");
-      }
-    } catch {
-      toast.error("Failed to process");
-    } finally {
-      setIsLoading(false);
+const handleGenerate = useCallback(async () => {
+  if (!canGenerate) return;
+  setIsLoading(true);
+  setIsGenerated(false);
+  try {
+    const imageToSave = await waitForPreview();
+    setIsGenerated(true);
+    if (imageToSave) {
+      await autoSaveCard(imageToSave);
+    } else {
+      toast.error("Preview image not ready, try again");
     }
-  }, [canGenerate, autoSaveCard]);
+  } catch {
+    toast.error("Failed to process");
+  } finally {
+    setIsLoading(false);
+  }
+}, [canGenerate, autoSaveCard, waitForPreview]);
 
+
+ 
  const handleDownload = useCallback((format: "PNG" | "JPEG" | "PDF" = "PNG") => {
 if (!finalImage) return;
 if (format === "PDF") { toast.info("PDF export coming soon!"); return; }
-const filename = generateCardFilename(cardType, recipientName);
+const filename = generateCardFilename(selectedCategoryName, recipientName);
 const ext = format === "JPEG" ? "jpg" : "png";
 downloadImage(finalImage, `${filename}.${ext}`);
 toast.success(`${format} downloaded!`);
-}, [finalImage, recipientName, cardType]);
+}, [finalImage, recipientName, selectedCategoryName]);
 
 const handleShare = useCallback(async () => {
   if (!finalImage) return;
-
   try {
-    // base64 → Blob → File
     const res = await fetch(finalImage);
     const blob = await res.blob();
-    const file = new File([blob], `${generateCardFilename(cardType, recipientName)}.png`, {
-      type: "image/png",
-    });
-
-    // File share support check karo
+    const file = new File(
+      [blob],
+      generateCardFilename(selectedCategoryName, recipientName),
+      { type: "image/png" }
+    );
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({
-        title: "My Card",
-        files: [file],
-      });
+      await navigator.share({ title: "My Card", files: [file] });
     } else {
-      // Fallback: clipboard pe copy karo
       await navigator.clipboard.writeText(window.location.href);
       toast.success("Page link copied to clipboard!");
     }
   } catch (err) {
-    // User ne cancel kiya to ignore karo
     if (err instanceof Error && err.name !== "AbortError") {
       toast.error("Share failed");
     }
   }
-}, [finalImage, cardType, recipientName]);
+}, [finalImage, selectedCategoryName, recipientName]);
+
 
   const handleReset = useCallback(() => {
     setIsGenerated(false);
@@ -211,7 +252,7 @@ buttonText = initialIsEditing.current ? "Updated" : "Generated"; // ← isEditin
   isEditing={isEditing}
   photoTransform={photoTransform}
   onTransformChange={onTransformChange}
-  overlayConfig={selectedTemplate?.overlayConfig ?? undefined}  // ← add yeh line
+overlayConfig={selectedTemplate?.overlayConfig ?? undefined}  // ← add yeh line
 />
         </div>
       </div>

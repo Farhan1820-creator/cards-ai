@@ -1,21 +1,27 @@
 "use client";
 
-import { useState } from "react";
-import { Search } from "lucide-react";
-import { Cake, Heart, Calendar, Mail, Plus,SlidersHorizontal, ChevronDown } from "lucide-react";
+import { useState, useCallback, useMemo } from "react";
+import { Search, Plus, SlidersHorizontal, ChevronDown } from "lucide-react";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Template } from "@/types/template";
-import { useTemplates, CATEGORIES, FilterCategory } from "./hooks/useTemplates";
+import { useTemplates } from "./hooks/useTemplates";
 import { TemplateCard } from "./TemplateCard";
 import { TemplateDialog } from "./TemplateDialog";
 import { AdminTemplateDialog, type AdminTemplateDialogData } from "./AdminTemplateDialog";
 import type { OverlayConfig } from "./OverlayConfigurator";
 
-// ── Types ─────────────────────────────────────────────────────
+// ── Types ──────────────────────────────────────────────────────
 interface AdminTemplate {
   id:            string;
   title:         string;
+  categoryId:    string;
   category:      string;
   imageUrl:      string | null;
   createdAt:     Date | null;
@@ -27,269 +33,251 @@ interface TemplatesClientProps {
   initialTemplates?: AdminTemplate[] | null;
 }
 
-const CATEGORY_META: Record<FilterCategory, { label: string; icon: React.ElementType }> = {
-  birthday:    { label: "Birthday",    icon: Cake     },
-  wedding:     { label: "Wedding",     icon: Heart    },
-  anniversary: { label: "Anniversary", icon: Calendar },
-  invitation:  { label: "Invitation",  icon: Mail     },
-};
+// ── API helpers ────────────────────────────────────────────────
+// Raw template shape jo server return karta hai
+interface RawTemplate {
+  id:             string;
+  name:           string;
+  categoryId:     string;
+  category:       string;
+  imageUrl?:      string | null;
+  createdAt?:     string | null;
+  overlayConfig?: OverlayConfig | null;
+}
 
-// ── Admin API helpers ─────────────────────────────────────────
-async function apiCreateTemplate(data: AdminTemplateDialogData) {
+function normaliseTemplate(t: RawTemplate): AdminTemplate {
+  return {
+    id:            t.id,
+    title:         t.name,
+    categoryId:    t.categoryId,
+    category:      t.category,
+    imageUrl:      t.imageUrl ?? null,
+    createdAt:     t.createdAt ? new Date(t.createdAt) : null,
+    overlayConfig: t.overlayConfig ?? null,
+  };
+}
+
+async function apiCreateTemplate(data: AdminTemplateDialogData): Promise<AdminTemplate> {
   const res = await fetch("/api/admin/templates", {
-    method:  "POST",
+    method: "POST",
     headers: { "Content-Type": "application/json" },
-    body:    JSON.stringify(data),
+    body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error("Create failed");
-  return res.json();
+  const json = await res.json();
+  return normaliseTemplate(json.template ?? json);
 }
 
-async function apiUpdateTemplate(id: string, data: AdminTemplateDialogData) {
+async function apiUpdateTemplate(id: string, data: AdminTemplateDialogData): Promise<AdminTemplate> {
   const res = await fetch("/api/admin/templates", {
-    method:  "PATCH",
+    method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body:    JSON.stringify({ id, ...data }),
+    body: JSON.stringify({ id, ...data }),
   });
   if (!res.ok) throw new Error("Update failed");
-  return res.json();
+  const json = await res.json();
+  return normaliseTemplate(json.template ?? json);
 }
 
-async function apiDeleteTemplate(id: string) {
+async function apiDeleteTemplate(id: string): Promise<void> {
   const res = await fetch("/api/admin/templates", {
-    method:  "DELETE",
+    method: "DELETE",
     headers: { "Content-Type": "application/json" },
-    body:    JSON.stringify({ id }),
+    body: JSON.stringify({ id }),
   });
   if (!res.ok) throw new Error("Delete failed");
 }
 
-async function apiFetchAllTemplates(): Promise<AdminTemplate[]> {
-  const res  = await fetch("/api/admin/templates");
-  const data = await res.json();
-  return (data.templates ?? []).map((t: {
-    id: string; name: string; category: string;
-    thumbnailUrl?: string | null; imageUrl?: string | null;
-    createdAt?: string | null; overlayConfig?: OverlayConfig | null;
-  }) => ({
-    id:            t.id,
-    title:         t.name,
-    category:      t.category,
-    imageUrl:      t.thumbnailUrl ?? t.imageUrl ?? null,
-    createdAt:     t.createdAt ? new Date(t.createdAt) : null,
-    overlayConfig: t.overlayConfig ?? null,
-  }));
-}
+// ANIMATION_MS: TemplateCard ke isDeleting CSS animation duration se match karo
+const ANIMATION_MS = 400;
 
-// ── Delete Dialog ─────────────────────────────────────────────
-function DeleteDialog({ open, title, onConfirm, onCancel }: {
-  open: boolean; title: string; onConfirm: () => void; onCancel: () => void;
-}) {
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative z-10 w-full max-w-sm bg-white rounded-2xl shadow-2xl p-8 text-center">
-        <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-          <svg className="w-7 h-7 text-red-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-          </svg>
-        </div>
-        <h3 className="text-lg font-bold text-gray-900 mb-1">Delete Template?</h3>
-        <p className="text-sm text-gray-500 mb-6">
-          <span className="font-semibold text-gray-700">&apos{title}&apos</span> will be permanently removed.
-        </p>
-        <div className="flex gap-3">
-          <button onClick={onCancel} className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50">
-            Cancel
-          </button>
-          <button onClick={onConfirm} className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-sm font-semibold text-white">
-            Delete
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Main Component ────────────────────────────────────────────
+// ── Main Component ─────────────────────────────────────────────
 export function TemplatesClient({ isAdmin = false, initialTemplates = null }: TemplatesClientProps) {
-  // ── User state ──────────────────────────────────────────────
+
+  // ── User (non-admin) state ─────────────────────────────────────
   const {
-    templates,
-    isLoading,
-    error,
-    category,
-    setCategory,
-    search,
-    setSearch,
-    page,
-    setPage,
-    totalPages,
-    total,
+    templates, isLoading, error,
+    categories,
+    category, setCategory,
+    search, setSearch,
+    page, setPage,
+    totalPages, total,
   } = useTemplates();
 
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
-  const [userFiltersOpen, setUserFiltersOpen] = useState(false);
+  const [userFiltersOpen,  setUserFiltersOpen]  = useState(false);
 
-  // ── Admin state ─────────────────────────────────────────────
-  const [adminTemplates,  setAdminTemplates]  = useState<AdminTemplate[]>(initialTemplates ?? []);
-  const [adminSearch,     setAdminSearch]     = useState("");
-  const [adminFilterCat,  setAdminFilterCat]  = useState<string>("all");
-  const [adminDialogOpen, setAdminDialogOpen] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState<AdminTemplate | null>(null);
-  const [deleteTarget,    setDeleteTarget]    = useState<AdminTemplate | null>(null);
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  // ── Admin state ────────────────────────────────────────────────
+  const [adminTemplates,   setAdminTemplates]   = useState<AdminTemplate[]>(initialTemplates ?? []);
+  const [adminSearch,      setAdminSearch]       = useState("");
+  const [adminFilterCat,   setAdminFilterCat]   = useState<string>("all");
+  const [adminDialogOpen,  setAdminDialogOpen]  = useState(false);
+  const [editingTemplate,  setEditingTemplate]  = useState<AdminTemplate | null>(null);
   const [adminFiltersOpen, setAdminFiltersOpen] = useState(false);
 
-  function showToast(message: string, type: "success" | "error" = "success") {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
-  }
+  // deleteTarget: dialog ke liye; deletingId: animation ke liye
+  const [deleteTarget, setDeleteTarget] = useState<AdminTemplate | null>(null);
+  const [deletingId,   setDeletingId]   = useState<string | null>(null);
 
-  async function handleAdminSave(data: AdminTemplateDialogData) {
+  // Admin filter pills ke liye categories — adminTemplates se hi unique
+  // {id, name} pairs derive kar lo, koi extra fetch nahi chahiye.
+  const adminCategories = useMemo<{ id: string; name: string }[]>(() => {
+    const map = new Map<string, string>();
+    adminTemplates.forEach((t) => {
+      if (t.categoryId && !map.has(t.categoryId)) map.set(t.categoryId, t.category);
+    });
+    return [{ id: "all", name: "All" }, ...Array.from(map, ([id, name]) => ({ id, name }))];
+  }, [adminTemplates]);
+
+  const visibleCategories = isAdmin ? adminCategories : categories;
+
+  // ── Admin: Save (create / edit) ────────────────────────────────
+  const handleAdminSave = useCallback(async (data: AdminTemplateDialogData) => {
     try {
       if (editingTemplate) {
-        await apiUpdateTemplate(editingTemplate.id, data);
-        showToast("Template updated!");
+        const updated = await apiUpdateTemplate(editingTemplate.id, data);
+        setAdminTemplates((prev) =>
+          prev.map((t) => (t.id === updated.id ? updated : t))
+        );
+        toast.success("Template updated!");
       } else {
-        await apiCreateTemplate(data);
-        showToast("Template created!");
+        const created = await apiCreateTemplate(data);
+        setAdminTemplates((prev) => [created, ...prev]);
+        toast.success("Template created!");
       }
-      const updated = await apiFetchAllTemplates();
-      setAdminTemplates(updated);
+      setAdminDialogOpen(false);
       setEditingTemplate(null);
-    } catch {
-      showToast("Something went wrong.", "error");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong.");
     }
-  }
+  }, [editingTemplate]);
 
-  async function handleDeleteConfirm() {
+  // ── Admin: Delete flow ─────────────────────────────────────────
+  const handleDeleteRequest = useCallback((t: AdminTemplate) => {
+    setDeleteTarget(t);
+  }, []);
+
+  const handleDeleteConfirm = useCallback(async () => {
     if (!deleteTarget) return;
-    try {
-      await apiDeleteTemplate(deleteTarget.id);
-      setAdminTemplates((ts) => ts.filter((t) => t.id !== deleteTarget.id));
-      showToast("Template deleted.");
-    } catch {
-      showToast("Delete failed.", "error");
-    }
-    setDeleteTarget(null);
-  }
+    const target = deleteTarget;
 
-  // ── Admin filtered templates ─────────────────────────────────
+    setDeleteTarget(null);
+    setDeletingId(target.id);
+
+    await new Promise<void>((resolve) => setTimeout(resolve, ANIMATION_MS));
+
+    setAdminTemplates((prev) => prev.filter((t) => t.id !== target.id));
+    setDeletingId(null);
+
+    try {
+      await apiDeleteTemplate(target.id);
+      toast.success("Template deleted.");
+    } catch {
+      setAdminTemplates((prev) => [target, ...prev]);
+      toast.error("Delete failed — template restored.");
+    }
+  }, [deleteTarget]);
+
+  const handleEdit = useCallback((t: AdminTemplate) => {
+    setEditingTemplate(t);
+    setAdminDialogOpen(true);
+  }, []);
+
+  const handleCreateOpen = useCallback(() => {
+    setEditingTemplate(null);
+    setAdminDialogOpen(true);
+  }, []);
+
+  const handleAdminDialogClose = useCallback(() => {
+    setAdminDialogOpen(false);
+    setEditingTemplate(null);
+  }, []);
+
+  // ── Derived: filtered list ───────────────────────────────────
   const adminFiltered = adminTemplates.filter((t) => {
-    const matchCat    = adminFilterCat === "all" || t.category === adminFilterCat;
+    const matchCat    = adminFilterCat === "all" || t.categoryId === adminFilterCat;
     const matchSearch = t.title.toLowerCase().includes(adminSearch.toLowerCase());
     return matchCat && matchSearch;
   });
 
-  // ── Render ───────────────────────────────────────────────────
+  // ── Filter toggle ──────────────────────────────────────────────
+  const filtersOpen     = isAdmin ? adminFiltersOpen : userFiltersOpen;
+  const hasActiveFilter = isAdmin ? adminFilterCat !== "all" : (!!category && category !== "all");
+
+  const toggleFilters = useCallback(() => {
+    if (isAdmin) setAdminFiltersOpen((v) => !v);
+    else         setUserFiltersOpen((v) => !v);
+  }, [isAdmin]);
+
+  // ── Render ─────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
 
-      {/* Toast */}
-      {isAdmin && toast && (
-        <div className={`fixed top-5 right-5 z-[100] px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold text-white ${
-          toast.type === "success" ? "bg-emerald-500" : "bg-red-500"
-        }`}>
-          {toast.message}
-        </div>
-      )}
-
-      {/* ── Header row — Create button for admin ── */}
       {isAdmin && (
         <div className="flex items-center justify-end">
-          <Button
-            onClick={() => { setEditingTemplate(null); setAdminDialogOpen(true); }}
-            className="gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Create Template
+          <Button onClick={handleCreateOpen} className="gap-2">
+            <Plus className="h-4 w-4" /> Create Template
           </Button>
         </div>
       )}
 
-{/* ── Filter Bar ── */}
-<div className="flex flex-col items-center gap-3 mb-6 w-full">
-
-  {/* Row 1: Search + mobile toggle */}
-  <div className="flex items-center gap-2 w-full max-w-lg">
-    <div className="relative flex-1">
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-      <Input
-        placeholder="Search templates..."
-        value={isAdmin ? adminSearch : search}
-        onChange={(e) => isAdmin ? setAdminSearch(e.target.value) : setSearch(e.target.value)}
-        className="pl-9 bg-white rounded-xl h-9 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary"
-      />
-    </div>
-
-    {/* Mobile: filter toggle */}
-    <button
-      onClick={() => isAdmin
-        ? setAdminFiltersOpen((v) => !v)
-        : setUserFiltersOpen((v) => !v)
-      }
-      className={`sm:hidden flex items-center gap-1.5 h-9 px-3 rounded-xl border text-sm font-medium transition-colors ${
-        (isAdmin ? adminFiltersOpen : userFiltersOpen) ||
-        (isAdmin ? adminFilterCat !== "all" : !!category)
-          ? "bg-primary text-primary-foreground border-primary"
-          : "bg-white border-border text-muted-foreground hover:text-foreground"
-      }`}
-    >
-      <SlidersHorizontal className="h-3.5 w-3.5" />
-      Filters
-      <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${
-        (isAdmin ? adminFiltersOpen : userFiltersOpen) ? "rotate-180" : ""
-      }`} />
-    </button>
-  </div>
-
-  {/* Row 2: Category pills — collapsible on mobile */}
-  <div className={`w-full flex justify-center overflow-hidden transition-all duration-300 ease-in-out ${
-    (isAdmin ? adminFiltersOpen : userFiltersOpen)
-      ? "max-h-40 opacity-100"
-      : "max-h-0 opacity-0 sm:max-h-40 sm:opacity-100"
-  }`}>
-    <div className="flex flex-wrap justify-center gap-2 pt-1 pb-0.5 px-1">
-      {isAdmin && (
-        <Button
-          variant={adminFilterCat === "all" ? "pill-active" : "pill"}
-          size="sm"
-          onClick={() => setAdminFilterCat("all")}
-        >
-          All
-        </Button>
-      )}
-      {CATEGORIES.map((cat) => {
-        const { label, icon: Icon } = CATEGORY_META[cat];
-        const isActive = isAdmin ? adminFilterCat === cat : category === cat;
-        return (
-          <Button
-            key={cat}
-            variant={isActive ? "pill-active" : "pill"}
-            size="sm"
-            onClick={() => isAdmin ? setAdminFilterCat(cat) : setCategory(cat)}
-            className="gap-1.5"
+      {/* Filter Bar */}
+      <div className="flex flex-col items-center gap-3 mb-6 w-full">
+        <div className="flex items-center gap-2 w-full max-w-lg">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <Input
+              placeholder="Search templates..."
+              value={isAdmin ? adminSearch : search}
+              onChange={(e) => isAdmin ? setAdminSearch(e.target.value) : setSearch(e.target.value)}
+              className="pl-9 bg-white rounded-xl h-9 text-sm"
+            />
+          </div>
+          <button
+            onClick={toggleFilters}
+            className={`sm:hidden flex items-center gap-1.5 h-9 px-3 rounded-xl border text-sm font-medium transition-colors ${
+              filtersOpen || hasActiveFilter
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-white border-border text-muted-foreground hover:text-foreground"
+            }`}
           >
-            <Icon className="h-4 w-4" />
-            {label}
-          </Button>
-        );
-      })}
-    </div>
-  </div>
-</div>
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            Filters
+            <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${filtersOpen ? "rotate-180" : ""}`} />
+          </button>
+        </div>
 
-      {/* ── Error (user only) ── */}
+        <div className={`w-full flex justify-center overflow-hidden transition-all duration-300 ease-in-out ${
+          filtersOpen ? "max-h-40 opacity-100" : "max-h-0 opacity-0 sm:max-h-40 sm:opacity-100"
+        }`}>
+          <div className="flex flex-wrap justify-center gap-2 pt-1 pb-0.5 px-1">
+            {visibleCategories.map((cat) => {
+              const isActive = isAdmin ? adminFilterCat === cat.id : category === cat.id;
+              return (
+                <Button
+                  key={cat.id}
+                  variant={isActive ? "pill-active" : "pill"}
+                  size="sm"
+                  onClick={() => isAdmin ? setAdminFilterCat(cat.id) : setCategory(cat.id)}
+                  className="gap-1.5"
+                >
+                   {cat.name}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
       {!isAdmin && error && <p className="text-sm text-destructive">{error}</p>}
 
-      {/* ── Grid ── */}
+      {/* Grid */}
       {isAdmin ? (
-        // Admin grid
         adminFiltered.length === 0 ? (
           <div className="py-16 text-center text-muted-foreground">
-            {adminSearch ? `No results for "${adminSearch}"` : "No templates yet. Create one!"}
+            {adminSearch
+              ? `No results for "${adminSearch}"`
+              : "No templates yet. Create one!"}
           </div>
         ) : (
           <>
@@ -299,44 +287,41 @@ export function TemplatesClient({ isAdmin = false, initialTemplates = null }: Te
                 <TemplateCard
                   key={t.id}
                   template={{
-                    id:        t.id,
-                    name:      t.title,
-                    category:  t.category,
-                    thumbnail: t.imageUrl ?? "",
+                    id:            t.id,
+                    name:          t.title,
+                    category:      t.category,
+                    imageUrl:      t.imageUrl ?? "",
                     overlayConfig: t.overlayConfig,
                   }}
-                  onClick={() => {}} // admin card pe click se kuch nahi
-                  isAdmin={true}
-                  onEdit={() => { setEditingTemplate(t); setAdminDialogOpen(true); }}
-                  onDelete={() => setDeleteTarget(t)}
+                  onClick={() => {}}
+                  isAdmin
+                  isDeleting={deletingId === t.id}
+                  onEdit={() => handleEdit(t)}
+                  onDelete={() => handleDeleteRequest(t)}
                 />
               ))}
             </div>
           </>
         )
+      ) : isLoading ? (
+        <TemplateGridSkeleton />
+      ) : templates.length === 0 ? (
+        <EmptyState search={search} />
       ) : (
-        // User grid
-        isLoading ? (
-          <TemplateGridSkeleton />
-        ) : templates.length === 0 ? (
-          <EmptyState search={search} />
-        ) : (
-          <>
-            <p className="text-sm text-muted-foreground">{total} templates found</p>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-              {templates.map((template) => (
-                <TemplateCard
-                  key={template.id}
-                  template={template}
-                  onClick={() => setSelectedTemplate(template)}
-                />
-              ))}
-            </div>
-          </>
-        )
+        <>
+          <p className="text-sm text-muted-foreground">{total} templates found</p>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {templates.map((template) => (
+              <TemplateCard
+                key={template.id}
+                template={template}
+                onClick={() => setSelectedTemplate(template)}
+              />
+            ))}
+          </div>
+        </>
       )}
 
-      {/* ── Pagination (user only) ── */}
       {!isAdmin && totalPages > 1 && (
         <div className="flex items-center justify-center gap-3 pt-2">
           <Button variant="outline" size="sm" onClick={() => setPage(page - 1)} disabled={page === 1}>
@@ -349,35 +334,44 @@ export function TemplatesClient({ isAdmin = false, initialTemplates = null }: Te
         </div>
       )}
 
-      {/* ── User template preview dialog ── */}
-      <TemplateDialog
-        template={selectedTemplate}
-        onClose={() => setSelectedTemplate(null)}
-      />
+      <TemplateDialog template={selectedTemplate}  onClose={() => setSelectedTemplate(null)} />
 
-      {/* ── Admin create/edit dialog ── */}
       {isAdmin && (
         <AdminTemplateDialog
           open={adminDialogOpen}
-          onClose={() => { setAdminDialogOpen(false); setEditingTemplate(null); }}
+          onClose={handleAdminDialogClose}
           onSave={handleAdminSave}
           editing={editingTemplate}
         />
       )}
 
-      {/* ── Admin delete confirm ── */}
       {isAdmin && (
-        <DeleteDialog
-          open={!!deleteTarget}
-          title={deleteTarget?.title ?? ""}
-          onConfirm={handleDeleteConfirm}
-          onCancel={() => setDeleteTarget(null)}
-        />
+        <AlertDialog open={!!deleteTarget} onOpenChange={(v) => { if (!v) setDeleteTarget(null); }}>
+          <AlertDialogContent className="bg-white">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete this template?</AlertDialogTitle>
+              <AlertDialogDescription>
+                <span className="font-semibold text-gray-700">{deleteTarget?.title}</span>{" "}
+                will be permanently removed.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-red-500 hover:bg-red-600 text-white"
+                onClick={handleDeleteConfirm}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
     </div>
   );
 }
 
+// ── Skeleton & Empty ───────────────────────────────────────────
 function TemplateGridSkeleton() {
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
@@ -393,8 +387,7 @@ function EmptyState({ search }: { search: string }) {
     <div className="py-16 text-center text-muted-foreground">
       {search
         ? <p>No templates found for &quot;{search}&quot;</p>
-        : <p>No templates in this category yet.</p>
-      }
+        : <p>No templates in this category yet.</p>}
     </div>
   );
 }

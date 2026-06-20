@@ -53,7 +53,7 @@ export function UserTable({ users, deletingId, onDeleteClick }: UserTableProps) 
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 px-6 py-4 border-b border-slate-100">
         <div className="flex items-center gap-2 flex-1">
           <h2 className="text-base font-semibold text-slate-800">User Directory</h2>
-          <span className="text-xs font-semibold bg-violet-100 text-primary px-2 py-0.5 rounded-full">
+          <span className="text-xs font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full">
             {filtered.length} Total
           </span>
         </div>

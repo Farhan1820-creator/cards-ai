@@ -1,5 +1,5 @@
 import { requireUser } from "@/lib/require-user";
-import { getAllTemplates } from "@/lib/actions/templates";
+import { getAdminTemplates } from "@/lib/actions/templates";
 import { TemplatesClient } from "./TemplatesClient";
 import type { OverlayConfig } from "./OverlayConfigurator";
 
@@ -9,14 +9,14 @@ export default async function TemplatesPage() {
   let initialTemplates = null;
 
   if (user.isAdmin) {
-    const templates = await getAllTemplates();
+    const templates = await getAdminTemplates();
 
     initialTemplates = templates.map((t) => ({
       id: t.id,
       title: t.name,
+      categoryId: t.categoryId,
       category: t.category,
-
-      imageUrl: t.thumbnailUrl || t.imageUrl || null,
+      imageUrl: t.imageUrl || null,
 
       createdAt: t.createdAt ? new Date(t.createdAt) : null,
 

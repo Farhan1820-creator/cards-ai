@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTypeSelector, type CardType } from "../components/CardTypeSelector";
+import { CardTypeSelector, type Category } from "../components/CardTypeSelector";
 import { StyleSelector, type CardStyle } from "../components/StyleSelector";
 import { ColorThemeSelector, type ColorTheme } from "../components/ColorThemeSelector";
 import { CustomColorPicker } from "../components/CustomColorPicker";
@@ -10,8 +10,10 @@ import { PromptInput } from "./components/PromptInput";
 import { RecipientNameInput } from "./components/RecipientNameInput";
 
 interface AISidebarPanelProps {
-  cardType: CardType;
-  onCardTypeChange: (v: CardType) => void;
+  categories: Category[];
+selectedCategoryId: string;
+onCategoryChange: (id: string) => void;
+isLoadingCategories?: boolean;
   style: CardStyle;
   onStyleChange: (v: CardStyle) => void;
   colorTheme: ColorTheme;
@@ -39,7 +41,11 @@ interface AISidebarPanelProps {
 }
 
 export function AISidebarPanel({
-  cardType, onCardTypeChange,
+
+  categories,
+ selectedCategoryId,
+ onCategoryChange,
+ isLoadingCategories,
   style, onStyleChange,
   colorTheme, onColorThemeChange,
   primaryColor, onPrimaryColorChange,
@@ -61,9 +67,14 @@ export function AISidebarPanel({
         <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
           Card Type
         </p>
-        <CardTypeSelector selected={cardType} onSelect={onCardTypeChange} />
+<CardTypeSelector
+  categories={categories}
+  selected={selectedCategoryId}
+  onSelect={onCategoryChange}
+  isLoading={isLoadingCategories}
+/>
 
-        {cardType === "custom" && (
+        {selectedCategoryId === "custom" && (
           <>
             <div className="h-px bg-border/50" />
             <CustomCardType

@@ -1,7 +1,6 @@
 // app/api/admin/users/[id]/route.ts
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { requireAdminApi } from "@/lib/api-auth";
 import { db } from "@/db";
 import { users, cards } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -10,15 +9,13 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.isAdmin) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const { error, user } = await requireAdminApi();
+  if (error) return error;
 
   const { id } = await params;
   const body = await req.json();
 
-  if (id === session.user.id) {
+  if (id === user.id) {
     return NextResponse.json(
       { error: "You cannot modify your own account" },
       { status: 400 }
@@ -50,14 +47,12 @@ export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.isAdmin) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const { error, user } = await requireAdminApi();
+  if (error) return error;
 
   const { id } = await params;
 
-  if (id === session.user.id) {
+  if (id === user.id) {
     return NextResponse.json(
       { error: "You cannot delete your own account" },
       { status: 400 }

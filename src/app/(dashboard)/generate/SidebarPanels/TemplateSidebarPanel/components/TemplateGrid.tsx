@@ -3,18 +3,16 @@
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Ban, Check } from "lucide-react";
-import { memo, useCallback } from "react";        
-import type { CardType } from "../../components/CardTypeSelector";
-import { type OverlayConfig } from "@/app/(dashboard)/templates/OverlayConfigurator"; 
+import { memo, useCallback } from "react";
+import { type OverlayConfig } from "@/app/(dashboard)/templates/OverlayConfigurator";
 
-
+// CardType import hata diya — category ab plain string hai
 export interface Template {
   id: string;
   name: string;
-  thumbnail: string;
-  category: Exclude<CardType, "custom">;
+  imageUrl: string;
+  category: string;        // ← ab string, hardcoded CardType nahi
   overlayConfig?: OverlayConfig | null;
-
 }
 
 export const NONE_TEMPLATE_ID = "__none__";
@@ -73,15 +71,14 @@ const TemplateTile = memo(function TemplateTile({
   template,
   selected,
   onSelect,
+  sizes,
 }: {
   template: Template;
   selected: boolean;
   onSelect: (t: Template) => void;
-  sizes: string
-  
+  sizes: string;
 }) {
   const label = truncateToTwoWords(template.name);
-  
 
   return (
     <button
@@ -91,10 +88,10 @@ const TemplateTile = memo(function TemplateTile({
     >
       <div className="aspect-[3/4] w-full overflow-hidden bg-muted relative">
         <Image
-          src={template.thumbnail}
+          src={template.imageUrl}
           alt={template.name}
           fill
-          sizes="(max-width: 768px) 25vw, 100px"
+          sizes={sizes}
           className="object-cover transition-transform duration-200 group-hover:scale-105"
         />
       </div>
@@ -119,25 +116,23 @@ export const TemplateGrid = memo(function TemplateGrid({
   const noneSelected = !selectedId || selectedId === NONE_TEMPLATE_ID;
 
   const handleNone     = useCallback(() => onSelect(null), [onSelect]);
-  // ✅ Inline wrap — ESLint requires first arg to be an inline function expression
   const handleTemplate = useCallback((t: Template) => onSelect(t), [onSelect]);
 
   return (
     <div className="space-y-1.5">
       <p className="text-xs font-medium text-foreground">Select Template</p>
-
-<div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-4">
-    <NoneTile selected={noneSelected} onSelect={handleNone} />
-    {templates.map((template) => (
-      <TemplateTile
-        key={template.id}
-        template={template}
-        selected={selectedId === template.id}
-        onSelect={handleTemplate}
-        sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, 100px"
-      />
-    ))}
-  </div>
-</div>
+      <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-4">
+        <NoneTile selected={noneSelected} onSelect={handleNone} />
+        {templates.map((template) => (
+          <TemplateTile
+            key={template.id}
+            template={template}
+            selected={selectedId === template.id}
+            onSelect={handleTemplate}
+            sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, 100px"
+          />
+        ))}
+      </div>
+    </div>
   );
 });

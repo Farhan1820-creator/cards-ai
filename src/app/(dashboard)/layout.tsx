@@ -26,7 +26,7 @@ export default async function DashboardLayout({
 
   return (
     <html>
-      <body className={`${poppins.variable} font-[family-name:var(--font-poppins)]`}>
+      <body className={`${poppins.variable} font-(family-name:--font-poppins)`}>
         <TooltipProvider>
           <DashboardChrome
             user={{

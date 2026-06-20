@@ -1,7 +1,7 @@
 import { requireUser } from "@/lib/require-user";
 import { db } from "@/db";
-import { cards, users } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { cards, users, templates, categories } from "@/db/schema";
+import { eq, desc, sql } from "drizzle-orm";
 import { MyCardsClient } from "@/app/(dashboard)/my-cards/MyCardsClient";
 import { MyCardsSkeleton } from "./MyCardsSkeleton";
 import { Suspense } from "react";
@@ -21,7 +21,7 @@ export default async function MyCardsPage({
         .select({
           id: cards.id,
           imageUrl: cards.imageUrl,
-          cardType: cards.cardType,
+          categoryName: categories.name,
           recipientName: cards.recipientName,
           prompt: cards.prompt,
           createdAt: cards.createdAt,
@@ -34,17 +34,34 @@ export default async function MyCardsPage({
         })
         .from(cards)
         .leftJoin(users, eq(cards.userId, users.id))
+        .leftJoin(templates, eq(cards.templateId, templates.id))
+        .leftJoin(categories, eq(templates.categoryId, categories.id))
         .orderBy(desc(cards.createdAt))
     : await db
-        .select()
+        .select({
+          id: cards.id,
+          imageUrl: cards.imageUrl,
+          categoryName: categories.name,
+          recipientName: cards.recipientName,
+          prompt: cards.prompt,
+          createdAt: cards.createdAt,
+          templateId: cards.templateId,
+          nameColor: cards.nameColor,
+          messageColor: cards.messageColor,
+          photoUrl: cards.photoUrl,
+          createdByName: sql<string | null>`NULL`,
+          createdByEmail: sql<string | null>`NULL`,
+        })
         .from(cards)
+        .leftJoin(templates, eq(cards.templateId, templates.id))
+        .leftJoin(categories, eq(templates.categoryId, categories.id))
         .where(eq(cards.userId, user.id))
         .orderBy(desc(cards.createdAt));
 
   const formattedCards = rawCards.map((card) => ({
     id: card.id,
     imageUrl: card.imageUrl,
-    cardType: card.cardType,
+    categoryName: card.categoryName ?? "Uncategorized",
     recipientName: card.recipientName ?? "",
     prompt: card.prompt ?? "",
 
@@ -65,10 +82,8 @@ export default async function MyCardsPage({
     messageColor: card.messageColor ?? "#ffffff",
     photoUrl: card.photoUrl ?? "",
 
-    createdByName:
-      "createdByName" in card ? (card.createdByName ?? "") : "",
-    createdByEmail:
-      "createdByEmail" in card ? (card.createdByEmail ?? "") : "",
+    createdByName: card.createdByName ?? "",
+    createdByEmail: card.createdByEmail ?? "",
   }));
 
   return (

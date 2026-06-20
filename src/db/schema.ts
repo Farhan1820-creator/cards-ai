@@ -6,7 +6,6 @@ import {
   varchar,
   jsonb,
   boolean,
-  integer,
 } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
@@ -24,27 +23,42 @@ export const users = pgTable("users", {
 
 export const templates = pgTable("templates", {
   id: text("id").primaryKey(),
+
   name: varchar("name", { length: 255 }).notNull(),
-  description: text("description"),
-  category: varchar("category", { length: 100 }).notNull(),
+  message: text("message"),
+
+  
   imageUrl: text("image_url").notNull(),
-  thumbnailUrl: text("thumbnail_url"),
-  overlayConfig: jsonb("overlay_config"),   // photo zone position/size etc.
+
+  categoryId: text("category_id").notNull().references(()=>categories.id),
+
+  cloudinaryPublicId: text("cloudinary_public_id").notNull(),
+
+  overlayConfig: jsonb("overlay_config"), 
+
   isActive: boolean("is_active").default(true).notNull(),
-  sortOrder: integer("sort_order").default(0).notNull(),
+
   createdBy: text("created_by").references(() => users.id),
+
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+export const categories = pgTable("categories", {
+  id: text("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  slug: text("slug").notNull().unique(), 
+});
+
 
 export const cards = pgTable("cards", {
   id: text("id").primaryKey(),
   userId: text("user_id").notNull().references(() => users.id),
   templateId: text("template_id"),
   imageUrl: text("image_url").notNull(),
-  prompt: text("prompt").notNull(),
-  cardType: varchar("card_type", { length: 50 }).notNull(),
+  prompt: text("prompt"),
   recipientName: varchar("recipient_name", { length: 255 }),
+  message: varchar("message"),
   nameColor: varchar("name_color", { length: 20 }),
   messageColor: varchar("message_color", { length: 20 }),
   photoUrl: text("photo_url"),

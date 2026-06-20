@@ -55,7 +55,7 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: #A121F0;
+  --primary: #4E99DF;
   --primary-foreground: oklch(0.985 0 0);
   --admin-primary: #4F39F6;
   --secondary: #e6e0ea;
@@ -170,4 +170,12 @@
   border-radius: 11px;
   background: white;
   z-index: 1;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

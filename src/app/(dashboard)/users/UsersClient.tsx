@@ -33,7 +33,7 @@ export interface User {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────
-const AVATAR_COLORS = ["#A121F0"];
+const AVATAR_COLORS = ["#5FA3E2"];
 
 export function getInitials(name: string): string {
   return name

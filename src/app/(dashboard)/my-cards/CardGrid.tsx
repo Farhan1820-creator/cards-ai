@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import { CardItem } from "./CardItem";
 import { EmptyCardsState } from "./EmptyCardsState";
 import type { CardItem as CardItemType } from "./hooks/useMyCards";
+import { generateCardFilename } from "@/lib/filename";
 import { useCallback } from "react";
 import { toast } from "sonner";
 
@@ -32,13 +33,15 @@ export function CardGrid({
    currentUserEmail,
 }: CardGridProps) {
   
+
 const handleShare = useCallback(async (card: CardItemType) => {
   try {
     const res = await fetch(card.imageUrl);
     const blob = await res.blob();
     const file = new File(
       [blob],
-      `${card.cardType}${card.recipientName ? `-${card.recipientName}` : ""}.png`,
+      // ✅ card.cardType abhi bhi backend se aata hai — reuse karo
+      generateCardFilename(card.cardType || "card", card.recipientName),
       { type: "image/png" }
     );
 
@@ -55,7 +58,8 @@ const handleShare = useCallback(async (card: CardItemType) => {
       toast.error("Share failed");
     }
   }
-}, []);    
+}, []);
+
   return (
     <>
       {/* Select mode top bar */}
