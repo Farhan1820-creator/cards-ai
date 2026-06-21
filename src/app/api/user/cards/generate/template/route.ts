@@ -17,6 +17,7 @@ export async function POST(req: Request) {
     message: body.message,
     prompt: body.message,
     templateId: body.templateId,
+    categoryId: body.categoryId,
     nameColor: body.nameColor,
     messageColor: body.messageColor,
     photoUrl: body.photoUrl,

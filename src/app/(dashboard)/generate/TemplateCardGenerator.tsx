@@ -104,17 +104,19 @@ const autoSaveCard = useCallback(async (image: string) => {
     const url = isEditing ? `/api/user/cards/${existingCardId}` : "/api/user/cards/generate/template";
     const method = isEditing ? "PATCH" : "POST";
 
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        image, categories, recipientName, message,
-        nameColor, messageColor, photoUrl,
-        templateId: selectedTemplate.id,
-        photoTransform,
-      }),
-      signal: controller.signal,
-    });
+const res = await fetch(url, {
+  method,
+  headers: { "Content-Type": "application/json" },
+body: JSON.stringify({
+  image, recipientName, message,
+  nameColor, messageColor, photoUrl,
+  templateId: selectedTemplate.id,
+  categoryId: selectedTemplate.categoryId,
+  photoTransform,
+}),
+  signal: controller.signal,
+});
+
 
     if (!res.ok) throw new Error("save_failed");
     const data = await res.json();
@@ -141,9 +143,7 @@ const autoSaveCard = useCallback(async (image: string) => {
     clearTimeout(timeoutId);
     setIsSaving(false);
   }
-}, [isEditing, existingCardId, selectedTemplate, categories, recipientName, message, nameColor, messageColor, photoUrl, photoTransform, onSaved]);
-
-// ✅ ref ko latest version pe point karo
+}, [isEditing, existingCardId, selectedTemplate, recipientName, message, nameColor, messageColor, photoUrl, photoTransform, onSaved]);// ✅ ref ko latest version pe point karo
 useEffect(() => {
   autoSaveCardRef.current = autoSaveCard;
 }, [autoSaveCard]);

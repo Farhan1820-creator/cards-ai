@@ -162,6 +162,7 @@ function GeneratePageContent() {
           setExistingCardId(card.id ?? null);
           setPhotoUrl(card.photoUrl ?? null);
           setFetchedTemplateId(card.templateId ?? null);
+          setSelectedCategoryId(card.categoryId ?? "all"); 
           setPhotoTransform(
             card.photoTransform ?? { scale: 1, offsetX: 0, offsetY: 0 }
           );

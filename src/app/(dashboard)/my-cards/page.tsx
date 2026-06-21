@@ -26,6 +26,7 @@ export default async function MyCardsPage({
           prompt: cards.prompt,
           createdAt: cards.createdAt,
           templateId: cards.templateId,
+          categoryId: cards.categoryId,
           nameColor: cards.nameColor,
           messageColor: cards.messageColor,
           photoUrl: cards.photoUrl,
@@ -46,6 +47,7 @@ export default async function MyCardsPage({
           prompt: cards.prompt,
           createdAt: cards.createdAt,
           templateId: cards.templateId,
+          categoryId: cards.categoryId,
           nameColor: cards.nameColor,
           messageColor: cards.messageColor,
           photoUrl: cards.photoUrl,
@@ -78,6 +80,7 @@ export default async function MyCardsPage({
       : "",
 
     templateId: card.templateId ?? "",
+    categoryId: card.categoryId ?? "",
     nameColor: card.nameColor ?? "#ffffff",
     messageColor: card.messageColor ?? "#ffffff",
     photoUrl: card.photoUrl ?? "",

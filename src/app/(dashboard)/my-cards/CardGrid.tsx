@@ -41,7 +41,7 @@ const handleShare = useCallback(async (card: CardItemType) => {
     const file = new File(
       [blob],
       // ✅ card.cardType abhi bhi backend se aata hai — reuse karo
-      generateCardFilename(card.cardType || "card", card.recipientName),
+      generateCardFilename(card.categoryName || "card", card.recipientName),
       { type: "image/png" }
     );
 

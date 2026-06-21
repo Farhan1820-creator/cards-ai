@@ -25,23 +25,21 @@ export default async function DashboardLayout({
   const user = await requireUser();
 
   return (
-    <html>
-      <body className={`${poppins.variable} font-(family-name:--font-poppins)`}>
-        <TooltipProvider>
-          <DashboardChrome
-            user={{
-              id: user.id,
-              name: user.name ?? null,
-              email: user.email ?? null,
-              image: user.image ?? null,
-              isAdmin: user.isAdmin,
-            }}
-          >
-            {children}
-          </DashboardChrome>
-          <Toaster />
-        </TooltipProvider>
-      </body>
-    </html>
+    <div className={`${poppins.variable} font-(family-name:--font-poppins)`}>
+      <TooltipProvider>
+        <DashboardChrome
+          user={{
+            id: user.id,
+            name: user.name ?? null,
+            email: user.email ?? null,
+            image: user.image ?? null,
+            isAdmin: user.isAdmin,
+          }}
+        >
+          {children}
+        </DashboardChrome>
+        <Toaster />
+      </TooltipProvider>
+    </div>
   );
 }

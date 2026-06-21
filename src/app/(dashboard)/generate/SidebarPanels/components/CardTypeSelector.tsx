@@ -4,7 +4,6 @@ import { Grid2X2 } from "lucide-react";
 export interface Category {
   id: string;
   name: string;
-  slug: string;
 }
 
 interface CardTypeSelectorProps {

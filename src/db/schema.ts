@@ -55,6 +55,7 @@ export const cards = pgTable("cards", {
   id: text("id").primaryKey(),
   userId: text("user_id").notNull().references(() => users.id),
   templateId: text("template_id"),
+  categoryId: text("category_id").references(() => categories.id),
   imageUrl: text("image_url").notNull(),
   prompt: text("prompt"),
   recipientName: varchar("recipient_name", { length: 255 }),

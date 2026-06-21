@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/require-user";
 import { db } from "@/db";
-import { cards, categories, templates } from "@/db/schema";
+import { cards } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { deleteCloudinaryImage, uploadBase64Image } from "@/lib/cloudinary";
 import { extractCloudinaryPublicId } from "@/lib/cloudinary-utils";
@@ -80,39 +80,27 @@ export async function PATCH(
     if (!existing) return NextResponse.json({ success: false }, { status: 404 });
 
     const body = await req.json();
-    const { image, recipientName, message, nameColor, messageColor, photoUrl, templateId, photoTransform } = body;
-    // ✅ cardType body se nahi lena — DB se derive karenge
+    const { image, recipientName, message, nameColor, messageColor, photoUrl, templateId, photoTransform, categoryId } = body;
 
     // ── Image update ─────────────────────────────────────────
-    let imageUrl: string = existing.imageUrl; // ✅ string type explicit
+    let imageUrl: string = existing.imageUrl;
     if (image && image.startsWith("data:")) {
       const publicId = extractCloudinaryPublicId(existing.imageUrl);
       if (publicId) await deleteCloudinaryImage(publicId);
-const uploaded = await uploadBase64Image(image, `cards-ai/cards/${user.id}`);
-imageUrl = uploaded.url;
+      const uploaded = await uploadBase64Image(image, `cards-ai/cards/${user.id}`);
+      imageUrl = uploaded.url;
     }
 
-    // ── cardType: templateId change hua toh re-derive karo ───
-    let cardType = existing.cardType;
     const newTemplateId = templateId ?? existing.templateId;
-    if (templateId && templateId !== existing.templateId) {
-      const template = await db
-        .select({ categoryName: categories.name })
-        .from(templates)
-        .leftJoin(categories, eq(templates.categoryId, categories.id))
-        .where(eq(templates.id, templateId))
-        .then((rows) => rows[0]);
-      cardType = template?.categoryName ?? existing.cardType;
-    }
 
     const [updated] = await db
       .update(cards)
       .set({
         imageUrl,
-        cardType,                                          // ✅ derived
         templateId:    newTemplateId,
+        categoryId:    categoryId     ?? existing.categoryId,
         recipientName: recipientName  ?? existing.recipientName,
-        message:       message        ?? existing.message,        // ✅ prompt nahi message
+        message:       message        ?? existing.message,
         nameColor:     nameColor      ?? existing.nameColor,
         messageColor:  messageColor   ?? existing.messageColor,
         photoUrl:      photoUrl       ?? existing.photoUrl,

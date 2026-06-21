@@ -11,7 +11,8 @@ export interface Template {
   id: string;
   name: string;
   imageUrl: string;
-  category: string;        // ← ab string, hardcoded CardType nahi
+  category: string;
+  categoryId: string;        
   overlayConfig?: OverlayConfig | null;
 }
 

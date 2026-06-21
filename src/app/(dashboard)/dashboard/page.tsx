@@ -18,7 +18,6 @@ export default async function DashboardPage() {
   const formattedCards = recentCards.map((card) => ({
     id:            card.id,
     imageUrl:      card.imageUrl,
-    cardType:      card.cardType,
     recipientName: card.recipientName ?? "",
     prompt:        card.prompt ?? "",
     templateId:    card.templateId ?? "",

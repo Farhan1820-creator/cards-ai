@@ -25,7 +25,6 @@ interface AdminData {
 interface FormattedCard {
   id:            string;
   imageUrl:      string;
-  cardType:      string;
   recipientName: string;
   prompt:        string;
   templateId:    string;

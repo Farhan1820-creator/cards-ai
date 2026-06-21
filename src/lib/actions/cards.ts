@@ -13,6 +13,7 @@ export async function createCard(data: {
   message?: string;
   prompt?: string;
   templateId: string;
+  categoryId: string;
   nameColor?: string;
   messageColor?: string;
   photoUrl?: string;
@@ -26,6 +27,7 @@ export async function createCard(data: {
       userId: data.userId,
       imageUrl: data.imageUrl,
       templateId: data.templateId,
+      categoryId: data.categoryId,
       recipientName: data.recipientName,
       message: data.message,
       prompt: data.prompt ?? "",

@@ -22,9 +22,9 @@ import { toast } from "sonner";
 interface CardItem {
   id: string;
   imageUrl: string;
-  cardType: string;
   recipientName: string;
   createdAt: string;
+  categoryName?: string; 
 }
 
 export function RecentCardsGrid({ cards: initialCards }: { cards: CardItem[] }) {
@@ -39,9 +39,10 @@ export function RecentCardsGrid({ cards: initialCards }: { cards: CardItem[] }) 
     setDeletionPhase("deleting");
 
     try {
-      const res = await fetch(`/api/user-cards/${cardId}`, { method: "DELETE" });
-      const data = await res.json();
-      if (!data.success) throw new Error();
+ const res = await fetch(`/api/user/cards/${cardId}`, { method: "DELETE" }); // confirm correct path
+if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
+const data = await res.json();
+if (!data.success) throw new Error();
 
       setCards((prev) => prev.filter((c) => c.id !== cardId));
       setDeletionPhase("done");
@@ -53,11 +54,11 @@ export function RecentCardsGrid({ cards: initialCards }: { cards: CardItem[] }) 
     }
   };
 
-  const handleShare = async (imageUrl: string, cardType: string, recipientName: string) => {
+  const handleShare = async (imageUrl: string, recipientName: string) => {
     try {
       const res = await fetch(imageUrl);
       const blob = await res.blob();
-      const filename = `${cardType}${recipientName ? `-${recipientName}` : ""}.png`;
+      const filename = `card${recipientName ? `-${recipientName}` : ""}.png`;
       const file = new File([blob], filename, { type: "image/png" });
 
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -75,8 +76,8 @@ export function RecentCardsGrid({ cards: initialCards }: { cards: CardItem[] }) 
     }
   };
 
-  const handleDownload = async (imageUrl: string, cardType: string, recipientName: string) => {
-    const filename = `${cardType}${recipientName ? `-${recipientName}` : ""}.png`;
+  const handleDownload = async (imageUrl: string, recipientName: string) => {
+    const filename = `${recipientName ? `-${recipientName}` : ""}.png`;
     try {
       await downloadImage(imageUrl, filename);
     } catch {
@@ -110,14 +111,14 @@ export function RecentCardsGrid({ cards: initialCards }: { cards: CardItem[] }) 
                 <div className="relative aspect-square w-full overflow-hidden bg-muted">
                   <Image
                     src={card.imageUrl}
-                    alt={`${card.cardType} card`}
+                    alt={`${card.recipientName} card`}
                     fill
                     className="object-cover transition-transform duration-300 group-hover:scale-105"
                     sizes="(max-width: 768px) 50vw, 25vw"
                   />
 
-                  {/* Kebab menu — sirf hover pe visible, saari actions isi ke andar */}
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  {/* Kebab menu — ab hamesha visible (touch-safe), hover-gated nahi */}
+                  <div className="absolute top-2 right-2">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button
@@ -130,18 +131,19 @@ export function RecentCardsGrid({ cards: initialCards }: { cards: CardItem[] }) 
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-36">
                         <DropdownMenuItem asChild className="gap-2 cursor-pointer">
-                          <Link href={`/generate?cardId=${card.id}`}>
-                            <Pencil className="h-3.5 w-3.5" /> Edit
-                          </Link>
+                      <Link href=
+                      {`/generate?cardId=${card.id}`}>
+  <Pencil className="h-3.5 w-3.5" /> Edit
+</Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleDownload(card.imageUrl, card.cardType, card.recipientName)}
+                          onClick={() => handleDownload(card.imageUrl, card.recipientName)}
                           className="gap-2 cursor-pointer"
                         >
                           <Download className="h-3.5 w-3.5" /> Download
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleShare(card.imageUrl, card.cardType, card.recipientName)}
+                          onClick={() => handleShare(card.imageUrl, card.recipientName)}
                           className="gap-2 cursor-pointer"
                         >
                           <Share2 className="h-3.5 w-3.5" /> Share
@@ -165,8 +167,8 @@ export function RecentCardsGrid({ cards: initialCards }: { cards: CardItem[] }) 
                 <div className="px-3 py-2.5">
                   <p className="text-xs font-medium text-foreground truncate capitalize">
                     {card.recipientName
-                      ? `${card.cardType} · ${card.recipientName}`
-                      : card.cardType}
+                      ? `${card.recipientName}`
+                      : card.recipientName}
                   </p>
                   <p className="text-[11px] text-muted-foreground mt-0.5">{card.createdAt}</p>
                 </div>

@@ -149,7 +149,7 @@ useEffect(() => {
         })
       : null;
 
-    await onSave({ name: title.trim(), categoryId, base64, overlayConfig });
+    await onSave({ name: title.trim(), categoryId: categoryId!, base64, overlayConfig });
     setLoading(false);
     onClose();
   }

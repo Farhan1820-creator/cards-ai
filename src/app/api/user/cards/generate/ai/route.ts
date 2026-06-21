@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
             messageColor,     
             photoUrl,         
             photoTransform,
+            categoryId,
         } = body;
         // Compose the full image prompt
         const finalPrompt = composeImagePrompt({
@@ -49,14 +50,15 @@ export async function POST(request: NextRequest) {
         const base64Image = await generateImage(finalPrompt);
 
         // Upload the image to Cloudinary
-        const imageUrl = await uploadBase64Image(base64Image);
+        const uploadResponse = await uploadBase64Image(base64Image);
+        const imageUrl = uploadResponse.url;
         
         // Save the card details in the database
         const card = await createCard({
             userId: user.id,
+            categoryId,
             imageUrl,
             prompt: finalPrompt,
-            cardType,
             recipientName,
             templateId,
             nameColor:      nameColor      ?? "#ffffff",
