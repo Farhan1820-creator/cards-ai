@@ -29,7 +29,7 @@ export default function LoginPage() {
   const router = useRouter();
 
   // ✅ FIXED ROLE-BASED REDIRECT (CLEAN + SAFE)
- useEffect(() => {
+useEffect(() => {
   if (status !== "authenticated") return;
 
   const isAdmin = session?.user?.isAdmin;
@@ -37,7 +37,7 @@ export default function LoginPage() {
   if (isAdmin) {
     router.replace("/dashboard");
   } else {
-    router.replace("/generate");
+    router.replace("/templates");
   }
 }, [status, session, router]);
 
