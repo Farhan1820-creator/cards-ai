@@ -2,8 +2,7 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/api-auth";
 import { db } from "@/db";
-import { users, cards } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { users, cards, deletedSessions } from "@/db/schema";import { eq } from "drizzle-orm";
 
 export async function PATCH(
   req: Request,
@@ -59,7 +58,6 @@ export async function DELETE(
     );
   }
 
-  // ── pehle user ke cards delete karo (foreign key constraint) ──
   await db.delete(cards).where(eq(cards.userId, id));
 
   const [deleted] = await db
@@ -70,6 +68,9 @@ export async function DELETE(
   if (!deleted) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
+
+  // ← blocklist mein add karo
+  await db.insert(deletedSessions).values({ userId: id });
 
   return NextResponse.json({ success: true });
 }

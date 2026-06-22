@@ -146,7 +146,7 @@ export function CardFilters({
               <option value="">All Users</option>
               {userOptions.map((u) => (
                 <option key={u.email} value={u.email}>
-                  {u.name || u.email}
+                  {u.name && u.email}
                 </option>
               ))}
             </select>

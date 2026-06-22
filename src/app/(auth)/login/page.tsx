@@ -37,7 +37,7 @@ export default function LoginPage() {
   if (isAdmin) {
     router.replace("/dashboard");
   } else {
-    router.replace("/templates");
+    router.replace("/generate");
   }
 }, [status, session, router]);
 

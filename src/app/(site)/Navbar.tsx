@@ -4,8 +4,11 @@ import { useState, useRef, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Plus, LogOut, ChevronDown } from 'lucide-react';
+import { Plus, LogOut, ChevronDown, ArrowUpRight } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
+
+const HERO_ROUTES = ['/', '/home']; 
 const navLinks = [
   { href: '/home', label: 'Home' },
   { href: '/about', label: 'About' },
@@ -13,85 +16,120 @@ const navLinks = [
   { href: '/contact', label: 'Contact' },
 ];
 
-const linkClass =
-  'font-medium text-primary-foreground pb-0.5 transition duration-300 hover:scale-105 hover:border-b hover:border-b-[1.5px] hover:border-b-purple-600 hover:translate-y-0.5';
+// ─── Three visual modes ───────────────────────────────────────────────────────
+// hero      → transparent bg, white text
+// default   → white bg, black text, hover:primary
+// scrolled  → primary bg, white text, hover:white/bright
+type NavMode = 'hero' | 'default' | 'scrolled';
 
+function useNavMode(isHero: boolean): NavMode {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 10);
+    // passive for perf
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  if (scrolled) return 'scrolled';
+  if (isHero) return 'hero';
+  return 'default';
+}
+
+// ─── Style maps ───────────────────────────────────────────────────────────────
+const navBg: Record<NavMode, string> = {
+  hero:     'bg-transparent',
+  default:  'bg-white shadow-sm',
+  scrolled: 'bg-primary shadow-md',
+};
+
+const linkCls: Record<NavMode, string> = {
+  hero:     'text-black/80 hover:text-black',
+  default:  'text-gray-800 hover:text-primary',
+  scrolled: 'text-white/85 hover:text-white',
+};
+
+const logoTextCls: Record<NavMode, string> = {
+  hero:     'text-black',
+  default:  'text-gray-900',
+  scrolled: 'text-white',
+};
+
+const logoBgCls: Record<NavMode, string> = {
+  hero:     'bg-transparent backdrop-blur-sm',
+  default:  'bg-gray-100',
+  scrolled: 'bg-white',   // ← white box on primary bg
+};
+
+const hamburgerCls: Record<NavMode, string> = {
+  hero:     'text-black',
+  default:  'text-gray-800',
+  scrolled: 'text-white',
+};
+
+
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
 function UserAvatar({ name }: { name?: string | null }) {
   const initials = name
     ? name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()
     : '?';
   return (
-    <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-800 flex items-center justify-center text-xs font-medium flex-shrink-0">
+    <div className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center text-xs font-semibold flex-shrink-0">
       {initials}
     </div>
   );
 }
 
-function UserDropdown() {
+function UserDropdown({ mode }: { mode: NavMode }) {
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
   if (!session) return null;
 
+  // Pill adapts: on white bg use a bordered dark pill, on colored bg use glass pill
+  const pillCls =
+    mode === 'default'
+      ? 'flex items-center gap-2 border border-gray-200 text-gray-800 bg-white px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-50 transition-all'
+      : 'flex items-center gap-2 bg-white backdrop-blur-sm border border-white/25 text-black px-4 py-2 rounded-full text-sm font-medium hover:bg-white/90 transition-all';
+
   return (
     <div ref={ref} className="relative">
-      {/* Trigger */}
-      <button
-        onClick={() => setOpen((prev) => !prev)}
-        className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-gray-200 hover:border-purple-300 bg-white transition-colors"
-      >
+      <button onClick={() => setOpen((p) => !p)} className={pillCls}>
         <UserAvatar name={session.user?.name} />
-        <div className="flex flex-col text-left leading-tight">
-          <span className="text-sm font-medium text-gray-800 max-w-[100px] truncate">
-            {session.user?.name}
-          </span>
-          <span className="text-[11px] text-gray-500 max-w-[100px] truncate">
-            {session.user?.email}
-          </span>
-        </div>
-        <ChevronDown
-          className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-        />
+        <span className="max-w-[100px] truncate">{session.user?.name?.split(' ')[0]}</span>
+        <ChevronDown className={`w-4 h-4 opacity-60 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
       </button>
 
-      {/* Dropdown */}
       {open && (
-        <div className="absolute right-0 mt-2 w-52 bg-white border border-gray-200 rounded-xl shadow-sm z-50 overflow-hidden">
-          {/* Header */}
+        <div className="absolute right-0 mt-2 w-52 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-100">
             <p className="text-sm font-medium text-gray-900 truncate">{session.user?.name}</p>
             <p className="text-xs text-gray-500 truncate">{session.user?.email}</p>
           </div>
-
-          {/* Items */}
           <Link
             href="/templates"
             onClick={() => setOpen(false)}
             className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
           >
-            <Plus className="w-4 h-4 text-gray-400" />
-            Create
+            <Plus className="w-4 h-4 text-gray-400" /> Create
           </Link>
-
           <div className="border-t border-gray-100" />
-
           <button
             onClick={() => { setOpen(false); signOut({ callbackUrl: '/login' }); }}
             className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
           >
-            <LogOut className="w-4 h-4" />
-            Logout
+            <LogOut className="w-4 h-4" /> Logout
           </button>
         </div>
       )}
@@ -99,62 +137,76 @@ function UserDropdown() {
   );
 }
 
+// ─── Main ─────────────────────────────────────────────────────────────────────
 export default function Navbar() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const { data: session, status } = useSession();
-
-  const closeMobileMenu = () => setIsMobileMenuOpen(false);
-
+  const pathname = usePathname();
+  const isHero = HERO_ROUTES.includes(pathname);
+  const mode = useNavMode(isHero);
   return (
-    <nav className="bg-primary border-b border-gray-200 sticky top-0 z-50">
+    <nav className={`
+      ${'fixed'} top-0 left-0 right-0 z-50
+      transition-all duration-300
+      ${navBg[mode]}
+    `}>
       <div className="max-w-9xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
 
           {/* Logo */}
-          <Link href="/home" className="flex items-center h-10 w-10 bg-primary-foreground">
-            <Image src="https://res.cloudinary.com/dggey8rb6/image/upload/v1781519413/download_e9qskl.png" alt="Cards AI logo" width={40} height={40} className="object-contain" />
+          <Link href="/home" className="flex items-center gap-2">
+<div className={`h-10 w-10 rounded-lg flex items-center justify-center transition-colors duration-300 ${logoBgCls[mode]}`}>              <Image
+                src="https://res.cloudinary.com/dggey8rb6/image/upload/v1781519413/download_e9qskl.png"
+                alt="Cards AI logo"
+                width={32}
+                height={32}
+                className="object-contain"
+              />
+            </div>
+            <span className={`font-bold text-sm hidden sm:block tracking-wide transition-colors duration-300 ${logoTextCls[mode]}`}>
+              Cards AI
+            </span>
           </Link>
 
-          {/* Desktop Nav - Centered */}
+          {/* Desktop Nav */}
           <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center space-x-8">
-            {navLinks.map((link) => (
-              <Link key={link.label} href={link.href} className={linkClass}>
-                {link.label}
+            {navLinks.map(({ href, label }) => (
+              <Link
+                key={label}
+                href={href}
+                className={`font-medium text-sm transition-colors duration-200 ${linkCls[mode]}`}
+              >
+                {label}
               </Link>
             ))}
           </div>
 
-          {/* Desktop Auth - Right */}
-          <div className="hidden md:flex items-center space-x-3">
-            {status === 'loading' ? (
-              <span className="text-sm text-white">Loading...</span>
-            ) : session ? (
-              <UserDropdown />
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  className="bg-white border border-1 border-white hover:bg-white/90 text-primary px-7 py-2.5 rounded-lg font-medium transition-colors text-sm shadow-sm hover:shadow"
-                >
-                  Login
-                </Link>
-                <Link
-                  href="/signup"
-                  className="bg-primary border border-1 border-white hover:bg-primary/90 text-white px-6 py-2.5 rounded-lg font-medium transition-colors text-sm shadow-sm hover:shadow"
-                >
-                  Sign Up
-                </Link>
-              </>
+          {/* Desktop Right */}
+          <div className="hidden md:flex items-center">
+            {status !== 'loading' && (
+              session
+                ? <UserDropdown mode={mode} />
+                : <Link
+                    href="/login"
+                    className={`
+                      flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all shadow-md
+                      ${mode === 'default'
+                        ? 'bg-primary text-white hover:bg-primary/90'
+                        : 'bg-white text-gray-900 hover:bg-white/90'}
+                    `}
+                  >
+                    Get Started <ArrowUpRight className="w-4 h-4" />
+                  </Link>
             )}
           </div>
 
-          {/* Mobile Menu Toggle */}
+          {/* Mobile Toggle */}
           <button
-            className="md:hidden p-2 text-primary-foreground hover:text-gray-900"
-            onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+            className={`md:hidden p-2 transition-colors duration-300 ${hamburgerCls[mode]}`}
+            onClick={() => setMobileOpen((p) => !p)}
             aria-label="Toggle menu"
           >
-            {isMobileMenuOpen ? (
+            {mobileOpen ? (
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -167,18 +219,18 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
-      {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-gray-100 bg-white">
+      {/* Mobile Menu — always white bg for readability */}
+      {mobileOpen && (
+        <div className="md:hidden bg-white border-t border-gray-100 shadow-lg">
           <div className="px-4 py-3 space-y-1">
-            {navLinks.map((link) => (
+            {navLinks.map(({ href, label }) => (
               <Link
-                key={link.label}
-                href={link.href}
-                onClick={closeMobileMenu}
-                className="block px-4 py-3 rounded-lg font-medium hover:bg-gray-50 text-gray-700"
+                key={label}
+                href={href}
+                onClick={() => setMobileOpen(false)}
+                className="block px-4 py-3 rounded-lg font-medium text-gray-800 hover:text-primary hover:bg-gray-50 transition-colors text-sm"
               >
-                {link.label}
+                {label}
               </Link>
             ))}
 
@@ -187,43 +239,45 @@ export default function Navbar() {
                 session ? (
                   <div className="px-4 py-2 space-y-3">
                     <div className="flex items-center gap-3">
-                      <UserAvatar name={session.user?.name} />
+                      <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">
+                        {session.user?.name?.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()}
+                      </div>
                       <div className="flex flex-col leading-tight">
-                        <span className="text-sm font-medium text-gray-800">{session.user?.name}</span>
+                        <span className="text-sm font-medium text-gray-900">{session.user?.name}</span>
                         <span className="text-xs text-gray-500">{session.user?.email}</span>
                       </div>
                     </div>
                     <div className="flex flex-col gap-2">
                       <Link
                         href="/templates"
-                        onClick={closeMobileMenu}
-                        className="w-full text-center bg-purple-100 hover:bg-purple-200 text-purple-700 px-4 py-3 rounded-lg font-medium transition-colors text-sm"
+                        onClick={() => setMobileOpen(false)}
+                        className="w-full text-center bg-primary text-white px-4 py-3 rounded-lg font-medium transition-colors text-sm hover:bg-primary/90"
                       >
                         Create a Card
                       </Link>
                       <button
-                        onClick={() => { closeMobileMenu(); signOut({ callbackUrl: '/login' }); }}
-                        className="w-full flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 px-4 py-3 rounded-lg font-medium transition-colors text-sm"
+                        onClick={() => { setMobileOpen(false); signOut({ callbackUrl: '/login' }); }}
+                        className="w-full flex items-center justify-center gap-2 text-red-600 bg-red-50 hover:bg-red-100 px-4 py-3 rounded-lg font-medium transition-colors text-sm"
                       >
                         <LogOut className="w-4 h-4" /> Logout
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col gap-2 px-4">
+                  <div className="flex flex-col gap-2 px-4 pb-2">
                     <Link
                       href="/login"
-                      onClick={closeMobileMenu}
-                      className="w-full text-center border border-gray-200 hover:bg-gray-50 text-gray-700 px-4 py-3 rounded-lg font-medium transition-colors text-sm"
+                      onClick={() => setMobileOpen(false)}
+                      className="w-full text-center border border-gray-200 text-gray-800 hover:bg-gray-50 px-4 py-3 rounded-lg font-medium transition-colors text-sm"
                     >
                       Login
                     </Link>
                     <Link
                       href="/signup"
-                      onClick={closeMobileMenu}
-                      className="w-full text-center bg-purple-600 hover:bg-purple-500 text-white px-4 py-3 rounded-lg font-medium transition-colors text-sm"
+                      onClick={() => setMobileOpen(false)}
+                      className="w-full text-center bg-primary text-white hover:bg-primary/90 px-4 py-3 rounded-lg font-semibold transition-colors text-sm"
                     >
-                      Sign Up
+                      Get Started
                     </Link>
                   </div>
                 )

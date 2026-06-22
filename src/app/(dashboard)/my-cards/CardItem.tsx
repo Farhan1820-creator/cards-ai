@@ -96,8 +96,8 @@ function CardItemComponent({
           <p className="text-xs font-medium text-foreground truncate capitalize leading-tight mt-0.5">
             {card.recipientName ? `${card.recipientName} ${card.categoryName}` : card.categoryName}
           </p>
-          <p className="text-[10px] text-muted-foreground truncate capitalize leading-tight mt-0.5">
-            {card.createdByName}
+          <p className="text-[10px] text-muted-foreground truncate  leading-tight mt-0.5">
+            {card.createdByEmail}
           </p>
         </div>
 

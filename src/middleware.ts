@@ -1,36 +1,46 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
+import { db } from "@/db";
+import { deletedSessions } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 export default withAuth(
-  function middleware(req) {
+  async function middleware(req) {
     const token = req.nextauth.token;
     const pathname = req.nextUrl.pathname;
 
-    // 🚫 banned users everywhere blocked
     if (token?.isBanned) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
 
-    // 🔐 admin-only routes
+ // middleware.ts
+if (token?.id) {
+  const [blocked] = await db
+    .select({ userId: deletedSessions.userId })
+    .from(deletedSessions)
+    .where(eq(deletedSessions.userId, token.id as string));
+
+  if (blocked) {
+    // signout URL pe redirect — NextAuth cookie clear kar dega
+    const signOutUrl = new URL("/api/auth/signout", req.url);
+    signOutUrl.searchParams.set("callbackUrl", "/login");
+    return NextResponse.redirect(signOutUrl);
+  }
+}
+
     const adminOnlyRoutes = ["/users"];
-
-    const isAdminRoute = adminOnlyRoutes.some((route) =>
-      pathname.startsWith(route)
-    );
-
-    if (isAdminRoute && !token?.isAdmin) {
+    if (
+      adminOnlyRoutes.some((r) => pathname.startsWith(r)) &&
+      !token?.isAdmin
+    ) {
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
 
     return NextResponse.next();
   },
   {
-    callbacks: {
-      authorized: ({ token }) => !!token,
-    },
-    pages: {
-      signIn: "/login",
-    },
+    callbacks: { authorized: ({ token }) => !!token },
+    pages: { signIn: "/login" },
   }
 );
 
@@ -40,9 +50,7 @@ export const config = {
     "/my-cards/:path*",
     "/templates/:path*",
     "/create/:path*",
-
     "/users/:path*",
-
     "/api/user/:path*",
     "/api/generate/:path*",
     "/api/templates/:path*",

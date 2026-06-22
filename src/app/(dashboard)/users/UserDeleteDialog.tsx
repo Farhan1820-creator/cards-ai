@@ -23,9 +23,9 @@ export function UserDeleteDialog({ target, deletingId, onConfirm, onCancel }: Us
         </div>
         <h3 className="text-lg font-bold text-gray-900 mb-1">Delete User?</h3>
         <p className="text-sm text-gray-500 mb-1">
-          <span className="font-semibold text-gray-700">{target.name}</span> aur uske saare cards
+          <span className="font-semibold text-gray-700">{target.name}</span> cards
         </p>
-        <p className="text-sm text-gray-500 mb-6">permanently delete ho jayenge.</p>
+        <p className="text-sm text-gray-500 mb-6">would also be permanently deleted.</p>
         <div className="flex gap-3">
           <button
             onClick={onCancel}

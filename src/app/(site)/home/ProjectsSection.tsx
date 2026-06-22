@@ -54,7 +54,7 @@ export default function TemplatesSection() {
                   key={i}
                   onClick={() => navigate(i)}
                   className={`h-2 rounded-full transition-all duration-300 ${
-                    i === current ? 'bg-purple-600 w-6' : 'bg-gray-300 hover:bg-gray-400 w-2'
+                    i === current ? 'bg-primary w-6' : 'bg-gray-300 hover:bg-gray-400 w-2'
                   }`}
                   aria-label={`Go to slide ${i + 1}`}
                 />
@@ -88,7 +88,7 @@ export default function TemplatesSection() {
           </p>
           <Link
             href="/templates"
-            className="mt-6 inline-block bg-primary hover:bg-purple-700 text-white px-8 py-3 rounded-xl text-sm font-semibold transition-colors duration-200"
+            className="mt-6 inline-block bg-primary hover:bg-black text-white px-8 py-3 rounded-xl text-sm font-semibold transition-colors duration-200"
           >
             Browse Now
           </Link>
@@ -109,7 +109,7 @@ export default function TemplatesSection() {
                 sizes="(max-width: 768px) 100vw, 60vw"
               />
             </div>
-            <span className={`absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm text-purple-800 text-xs font-semibold px-3 py-1.5 rounded-lg transition-opacity duration-150 ${animating ? 'opacity-0' : 'opacity-100'}`}>
+            <span className={`absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm text-primary text-xs font-semibold px-3 py-1.5 rounded-lg transition-opacity duration-150 ${animating ? 'opacity-0' : 'opacity-100'}`}>
               {projects[current].category}
             </span>
           </div>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { User, formatDate } from "./UsersClient";
+import { verifiedAction as runVerifiedAction } from "@/lib/actions/verifiedAction";
 
 function Avatar({ user, size = "md" }: { user: User; size?: "sm" | "md" | "lg" }) {
   const sizes = { sm: "w-8 h-8 text-xs", md: "w-10 h-10 text-sm", lg: "w-12 h-12 text-base" };
@@ -33,6 +34,7 @@ interface UserTableProps {
   onDeleteClick: (user: User) => void;
 }
 
+
 export function UserTable({ users, deletingId, onDeleteClick }: UserTableProps) {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -46,6 +48,7 @@ export function UserTable({ users, deletingId, onDeleteClick }: UserTableProps) 
 
   const totalPages = Math.ceil(filtered.length / perPage);
   const paginated = filtered.slice((currentPage - 1) * perPage, currentPage * perPage);
+
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -127,7 +130,7 @@ export function UserTable({ users, deletingId, onDeleteClick }: UserTableProps) 
                         </svg>
                       </a>
                       <button
-                        onClick={() => onDeleteClick(user)}
+                        onClick={() => runVerifiedAction(() => onDeleteClick(user))}
                         disabled={deletingId === user.dbId}
                         className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors disabled:opacity-40"
                         title="Delete"

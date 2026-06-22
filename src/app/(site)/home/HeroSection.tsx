@@ -1,64 +1,61 @@
 import Link from "next/link";
 import Image from "next/image";
+import { ArrowUpRight } from "lucide-react";
 
-const heroImg1 = "https://res.cloudinary.com/dggey8rb6/image/upload/v1781088375/1135w-YaSKt4OQVNk_szxk8a.webp";
-const heroImg2 = "https://res.cloudinary.com/dggey8rb6/image/upload/v1781088413/images_8_s3zgfi.jpg";
+const heroBg = "https://res.cloudinary.com/dggey8rb6/image/upload/v1782116303/hero_swgtra.png";
 
 export default function HeroSection() {
   return (
-    <section className="relative w-full overflow-hidden py-16 sm:py-20 md:py-24">
-      <div className="relative max-w-9xl mx-auto px-4 sm:px-6 lg:px-8 min-h-[60vh] flex items-center justify-center">
+    <section className="relative w-full h-[90vh] min-h-[560px] max-h-[960px] overflow-hidden">
+      {/* Background Image */}
+      <Image
+        src={heroBg}
+        alt="Cards AI hero background"
+        fill
+        className="object-cover object-right"
+        priority
+      />
 
-        {/* Desktop Card - Left */}
-        <div className="hidden md:block absolute left-4 lg:left-8 xl:left-16 top-1/2 -translate-y-1/2 w-[160px] lg:w-[210px] xl:w-[260px] z-0 pointer-events-none">
-          <div className="relative aspect-[3/4] rounded-2xl xl:rounded-3xl shadow-2xl rotate-[-6deg] overflow-hidden">
-            <Image src={heroImg1} alt="Botanical greeting card" fill className="object-cover" />
-          </div>
-        </div>
+      {/* Dark overlay — heavier at bottom, light at top */}
+      <div className="absolute inset-0 bg-gradient-to-t from-white/20 via-white/15 to-white/5 z-10" />
 
-        {/* Desktop Card - Right */}
-        <div className="hidden md:block absolute right-4 lg:right-8 xl:right-16 top-1/2 -translate-y-1/2 w-[160px] lg:w-[210px] xl:w-[260px] z-0 pointer-events-none">
-          <div className="relative aspect-[3/4] rounded-2xl xl:rounded-3xl shadow-2xl rotate-[6deg] overflow-hidden">
-            <Image src={heroImg2} alt="Birthday greeting card" fill className="object-cover" />
-          </div>
-        </div>
+      {/* Bottom-left Content */}
+      <div className="absolute bottom-0 left-0 z-20 px-6 pb-12 sm:px-10 sm:pb-14 md:px-14 md:pb-16 lg:px-20 lg:pb-20 max-w-3xl">
 
-        {/* Center Content */}
-        <div className="relative z-10 w-full max-w-2xl mx-auto text-center px-2 flex flex-col items-center">
+        {/* Subtitle */}
+        <p className="text-black/55 text-xs sm:text-sm font-medium uppercase tracking-widest mb-3">
+Start with Premium Templates
+        </p>
 
-          {/* Mobile Cards — flow mein, content ke upar */}
-          <div className="flex md:hidden items-end justify-center gap-4 mb-8 pointer-events-none">
-            <div className="relative w-[100px] h-[130px] rounded-xl shadow-lg rotate-[-6deg] overflow-hidden flex-shrink-0">
-              <Image src={heroImg1} alt="Botanical greeting card" fill className="object-cover" />
-            </div>
-            <div className="relative w-[100px] h-[130px] rounded-xl shadow-lg rotate-[6deg] overflow-hidden flex-shrink-0">
-              <Image src={heroImg2} alt="Birthday greeting card" fill className="object-cover" />
-            </div>
-          </div>
+        {/* Heading */}
+        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-black leading-[1.05] mb-4 sm:mb-5">
+          Create{' '}
+          <span className="text-primary">Magic</span>
+          <br className="hidden sm:block" />
+          {' '}in Seconds
+        </h1>
 
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-gray-900 mb-4 sm:mb-6 leading-tight">
-            Create <span className="text-primary">Magic</span> in Seconds
-          </h1>
+        {/* Description */}
+        <p className="text-black/65  text-sm sm:text-base md:text-lg max-w-md mb-8 leading-relaxed">
+         Choose from professionally designed templates and create beautiful, personalized greeting cards in minutes.
+        </p>
 
-          <p className="text-gray-500 text-sm sm:text-base md:text-lg max-w-xl mx-auto mb-8 leading-relaxed">
-            The world&aposs most sophisticated AI-powered greeting card generator.
-            Professional designs, personalized messages, and instant delivery.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-3 justify-center w-full sm:w-auto">
-            <Link
-              href="/dashboard"
-              className="bg-primary text-white text-sm font-bold px-8 py-4 rounded-2xl shadow-lg shadow-purple-300/50 hover:shadow-xl hover:shadow-purple-400/60 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
-            >
-              Start Creating for Free
-            </Link>
-            <Link
-              href="/dashboard"
-              className="px-8 py-4 bg-white hover:bg-gray-50 text-gray-900 border border-gray-200 rounded-xl font-medium transition-colors text-sm"
-            >
-              View Templates
-            </Link>
-          </div>
+        {/* CTAs */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Link
+            href="/templates"
+            className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-7 py-3.5 rounded-full text-sm font-bold hover:bg-black/90 transition-all shadow-lg w-fit"
+          >
+            Start Creating
+            <ArrowUpRight className="w-4 h-4" />
+          </Link>
+          <Link
+            href="/templates"
+            className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-black/25 text-black px-7 py-3.5 rounded-full text-sm font-medium hover:bg-black/10 transition-all w-fit"
+          >
+            View Templates
+            <ArrowUpRight className="w-4 h-4 opacity-60" />
+          </Link>
         </div>
       </div>
     </section>

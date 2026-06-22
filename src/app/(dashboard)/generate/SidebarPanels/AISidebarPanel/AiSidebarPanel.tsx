@@ -1,5 +1,9 @@
 "use client";
 
+import { useMemo } from "react";
+import { Sparkles, Palette } from "lucide-react";
+
+import { TabbedSidebarLayout } from "@/app/(dashboard)/generate/SidebarPanels/TabbedSidebarLayout";
 import { CardTypeSelector, type Category } from "../components/CardTypeSelector";
 import { StyleSelector, type CardStyle } from "../components/StyleSelector";
 import { ColorThemeSelector, type ColorTheme } from "../components/ColorThemeSelector";
@@ -11,9 +15,9 @@ import { RecipientNameInput } from "./components/RecipientNameInput";
 
 interface AISidebarPanelProps {
   categories: Category[];
-selectedCategoryId: string;
-onCategoryChange: (id: string) => void;
-isLoadingCategories?: boolean;
+  selectedCategoryId: string;
+  onCategoryChange: (id: string) => void;
+  isLoadingCategories?: boolean;
   style: CardStyle;
   onStyleChange: (v: CardStyle) => void;
   colorTheme: ColorTheme;
@@ -41,11 +45,10 @@ isLoadingCategories?: boolean;
 }
 
 export function AISidebarPanel({
-
   categories,
- selectedCategoryId,
- onCategoryChange,
- isLoadingCategories,
+  selectedCategoryId,
+  onCategoryChange,
+  isLoadingCategories,
   style, onStyleChange,
   colorTheme, onColorThemeChange,
   primaryColor, onPrimaryColorChange,
@@ -59,88 +62,120 @@ export function AISidebarPanel({
   prompt, onPromptChange,
   recipientName, onRecipientNameChange,
 }: AISidebarPanelProps) {
-  return (
-    <div className="flex flex-col gap-4 h-full overflow-y-auto pr-0.5">
+  const tabs = useMemo(
+    () => [
+      {
+        id: "personalize",
+        label: "Personalize",
+        icon: Sparkles,
+        content: (
+          <div className="flex flex-col gap-4">
+            {/* Card Type */}
+            <div className="rounded-xl border border-border/60 bg-card p-3 shadow-sm space-y-3">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                Card Type
+              </p>
+              <CardTypeSelector
+                categories={categories}
+                selected={selectedCategoryId}
+                onSelect={onCategoryChange}
+                isLoading={isLoadingCategories}
+              />
+              {selectedCategoryId === "custom" && (
+                <>
+                  <div className="h-px bg-border/50" />
+                  <CustomCardType
+                    cardTitle={customCardTitle}
+                    occasionDescription={customOccasion}
+                    tone={customTone}
+                    includeCustomMessage={includeCustomMessage}
+                    onCardTitleChange={onCustomCardTitleChange}
+                    onOccasionDescriptionChange={onCustomOccasionChange}
+                    onToneChange={onCustomToneChange}
+                    onIncludeCustomMessageChange={onIncludeCustomMessageChange}
+                  />
+                </>
+              )}
+            </div>
 
-      {/* Card Type */}
-      <div className="rounded-xl border border-border/60 bg-card p-3 shadow-sm space-y-3">
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-          Card Type
-        </p>
-<CardTypeSelector
-  categories={categories}
-  selected={selectedCategoryId}
-  onSelect={onCategoryChange}
-  isLoading={isLoadingCategories}
-/>
+            {/* Recipient + Prompt */}
+            <div className="rounded-xl border border-border/60 bg-card p-3 shadow-sm space-y-3">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                Details
+              </p>
+              <RecipientNameInput value={recipientName} onChange={onRecipientNameChange} />
+              <PromptInput value={prompt} onChange={onPromptChange} />
+            </div>
 
-        {selectedCategoryId === "custom" && (
-          <>
-            <div className="h-px bg-border/50" />
-            <CustomCardType
-              cardTitle={customCardTitle}
-              occasionDescription={customOccasion}
-              tone={customTone}
-              includeCustomMessage={includeCustomMessage}
-              onCardTitleChange={onCustomCardTitleChange}
-              onOccasionDescriptionChange={onCustomOccasionChange}
-              onToneChange={onCustomToneChange}
-              onIncludeCustomMessageChange={onIncludeCustomMessageChange}
-            />
-          </>
-        )}
-      </div>
+            {/* Custom Message */}
+            <div className="rounded-xl border border-border/60 bg-card p-3 shadow-sm">
+              <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                Message
+              </p>
+              <CustomMessageText
+                enabled={includeCustomMessage}
+                message={customMessageText}
+                onToggle={onIncludeCustomMessageChange}
+                onMessageChange={onCustomMessageTextChange}
+              />
+            </div>
+          </div>
+        ),
+      },
+      {
+        id: "style",
+        label: "Style",
+        icon: Palette,
+        content: (
+          <div className="flex flex-col gap-4">
+            {/* Style */}
+            <div className="rounded-xl border border-border/60 bg-card p-3 shadow-sm space-y-3">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                Style
+              </p>
+              <StyleSelector selected={style} onSelect={onStyleChange} />
+            </div>
 
-      {/* Recipient + Prompt */}
-      <div className="rounded-xl border border-border/60 bg-card p-3 shadow-sm space-y-3">
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-          Details
-        </p>
-        <RecipientNameInput value={recipientName} onChange={onRecipientNameChange} />
-        <PromptInput value={prompt} onChange={onPromptChange} />
-      </div>
-
-      {/* Custom Message */}
-      <div className="rounded-xl border border-border/60 bg-card p-3 shadow-sm">
-        <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-          Message
-        </p>
-        <CustomMessageText
-          enabled={includeCustomMessage}
-          message={customMessageText}
-          onToggle={onIncludeCustomMessageChange}
-          onMessageChange={onCustomMessageTextChange}
-        />
-      </div>
-
-      {/* Style */}
-      <div className="rounded-xl border border-border/60 bg-card p-3 shadow-sm space-y-3">
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-          Style
-        </p>
-        <StyleSelector selected={style} onSelect={onStyleChange} />
-      </div>
-
-      {/* Color Theme */}
-      <div className="rounded-xl border border-border/60 bg-card p-3 shadow-sm space-y-3">
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-          Color Theme
-        </p>
-        <ColorThemeSelector selected={colorTheme} onSelect={onColorThemeChange} />
-        {colorTheme === "custom" && (
-          <>
-            <div className="h-px bg-border/50" />
-            <CustomColorPicker
-              primaryColor={primaryColor}
-              secondaryColor={secondaryColor}
-              accentColor={accentColor}
-              onPrimaryChange={onPrimaryColorChange}
-              onSecondaryChange={onSecondaryColorChange}
-              onAccentChange={onAccentColorChange}
-            />
-          </>
-        )}
-      </div>
-    </div>
+            {/* Color Theme */}
+            <div className="rounded-xl border border-border/60 bg-card p-3 shadow-sm space-y-3">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                Color Theme
+              </p>
+              <ColorThemeSelector selected={colorTheme} onSelect={onColorThemeChange} />
+              {colorTheme === "custom" && (
+                <>
+                  <div className="h-px bg-border/50" />
+                  <CustomColorPicker
+                    primaryColor={primaryColor}
+                    secondaryColor={secondaryColor}
+                    accentColor={accentColor}
+                    onPrimaryChange={onPrimaryColorChange}
+                    onSecondaryChange={onSecondaryColorChange}
+                    onAccentChange={onAccentColorChange}
+                  />
+                </>
+              )}
+            </div>
+          </div>
+        ),
+      },
+    ],
+    [
+      categories, selectedCategoryId, onCategoryChange, isLoadingCategories,
+      customCardTitle, onCustomCardTitleChange,
+      customOccasion, onCustomOccasionChange,
+      customTone, onCustomToneChange,
+      includeCustomMessage, onIncludeCustomMessageChange,
+      recipientName, onRecipientNameChange,
+      prompt, onPromptChange,
+      customMessageText, onCustomMessageTextChange,
+      style, onStyleChange,
+      colorTheme, onColorThemeChange,
+      primaryColor, onPrimaryColorChange,
+      secondaryColor, onSecondaryColorChange,
+      accentColor, onAccentColorChange,
+    ]
   );
+
+  return <TabbedSidebarLayout tabs={tabs} />;
 }

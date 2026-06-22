@@ -89,8 +89,8 @@ if (!data.success) throw new Error();
     <>
       {cards.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-border bg-white p-12 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-violet-100">
-            <Plus className="h-6 w-6 text-violet-600" />
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+            <Plus className="h-6 w-6 text-primary" />
           </div>
           <h3 className="text-base font-semibold text-foreground mb-1">No cards yet</h3>
           <p className="text-sm text-muted-foreground mb-4">
