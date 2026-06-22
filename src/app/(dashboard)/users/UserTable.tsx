@@ -130,7 +130,7 @@ export function UserTable({ users, deletingId, onDeleteClick }: UserTableProps) 
                         </svg>
                       </a>
                       <button
-                        onClick={() => runVerifiedAction(() => onDeleteClick(user))}
+                        onClick={() => runVerifiedAction(async () => onDeleteClick(user))}
                         disabled={deletingId === user.dbId}
                         className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors disabled:opacity-40"
                         title="Delete"
