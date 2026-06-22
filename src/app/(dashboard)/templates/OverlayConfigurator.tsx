@@ -11,7 +11,7 @@ export interface OverlayConfig {
 
 export const DEFAULT_OVERLAY_CONFIG: OverlayConfig = {
   photo:         { x: 540, y: 700,  r: 250 },
-  recipientName: { x: 540, y: 1025, fontSize: 40 },
+  recipientName: { x: 540, y: 1032, fontSize: 40 },
   message:       { x: 540, y: 1100, fontSize: 28 },
 };
 
