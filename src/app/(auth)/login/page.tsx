@@ -96,7 +96,7 @@ useEffect(() => {
           <Button
             variant="outline"
             className="mb-6 h-12 w-full gap-3 text-base"
-            onClick={() => signIn("google", { callbackUrl: "/" })}
+            onClick={() => signIn("google", { callbackUrl: "/templates" })}
             disabled={isLoading}
           >
             <GoogleIcon />
