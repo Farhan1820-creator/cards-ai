@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { OverlayConfigurator, DEFAULT_OVERLAY_CONFIG, type OverlayConfig } from "./OverlayConfigurator";
+import { toast } from "sonner";
 
 export interface CategoryDef { id: string; label: string; }
 // ⚠️ icon field hata diya hai — agar kahin aur CategoryDef.icon use ho raha
@@ -133,11 +134,17 @@ useEffect(() => {
     setErrors((e) => ({ ...e, image: "" }));
   }
 
-  async function handleSubmit() {
-    const errs: Record<string, string> = {};
-    if (!title.trim())  errs.title    = "Title is required.";
-    if (!categoryId)    errs.category = "Please select a category.";
-    if (Object.keys(errs).length) { setErrors(errs); return; }
+async function handleSubmit() {
+  const errs: Record<string, string> = {};
+  if (!title.trim())           errs.title    = "Title is required.";
+  if (!categoryId)             errs.category = "Please select a category.";
+  if (!file && !editing?.imageUrl) errs.image = "Template image is required.";  // ← image validation add
+  
+  if (Object.keys(errs).length) {
+    setErrors(errs);
+    toast.error("Please fill all required fields.");
+    return;
+  }
 
     setLoading(true);
     const base64 = file
