@@ -63,10 +63,10 @@ function GeneratePageContent() {
 
   // ── Template mode state ──────────────────────────────────────────────────────
   const [tmplRecipientName, setTmplRecipientName] = useState(
-    searchParams.get("recipientName") ?? ""
+    searchParams.get("recipientName") ?? "Name"
   );
   const [tmplMessage, setTmplMessage] = useState(
-    searchParams.get("message") ?? ""
+    searchParams.get("message") ?? "Enter Message here"
   );
   const [nameColor, setNameColor] = useState(
     searchParams.get("nameColor") ?? DEFAULT_NAME_CLR
