@@ -19,9 +19,9 @@ export default function CTA (){
         <div className="w-full">
           <div className="relative w-full h-50 sm:h-60 lg:h-60 rounded-3xl overflow-hidden">
             <img
-              src="https://res.cloudinary.com/dggey8rb6/image/upload/v1782115425/471fe17a-3f64-4725-a3e4-8a14c6898922_ezxt67.png" 
+              src="https://res.cloudinary.com/dggey8rb6/image/upload/v1782123888/471fe17a-3f64-4725-a3e4-8a14c6898922_ezxt67.png" 
               alt="Fashion collection showing different colored shirts"
-              className="w-full h-full object-cover object-top"
+              className="w-full h-full object-cover object"
             />
           </div>
         </div>

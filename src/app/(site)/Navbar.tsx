@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Plus, LogOut, ChevronDown, ArrowUpRight } from 'lucide-react';
+import { BlocksIcon, LogOut, ChevronDown, ArrowUpRight } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 
@@ -118,11 +118,11 @@ function UserDropdown({ mode }: { mode: NavMode }) {
             <p className="text-xs text-gray-500 truncate">{session.user?.email}</p>
           </div>
           <Link
-            href="/templates"
+            href="/dashboard"
             onClick={() => setOpen(false)}
             className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
           >
-            <Plus className="w-4 h-4 text-gray-400" /> Create
+            <BlocksIcon className="w-4 h-4 text-gray-400" /> Dashboard
           </Link>
           <div className="border-t border-gray-100" />
           <button

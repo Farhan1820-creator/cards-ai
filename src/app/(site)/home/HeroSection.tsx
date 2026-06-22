@@ -43,7 +43,7 @@ Start with Premium Templates
         {/* CTAs */}
         <div className="flex flex-col sm:flex-row gap-3">
           <Link
-            href="/templates"
+            href="/generate"
             className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-7 py-3.5 rounded-full text-sm font-bold hover:bg-black/90 transition-all shadow-lg w-fit"
           >
             Start Creating
@@ -51,7 +51,7 @@ Start with Premium Templates
           </Link>
           <Link
             href="/templates"
-            className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-black/25 text-black px-7 py-3.5 rounded-full text-sm font-medium hover:bg-black/10 transition-all w-fit"
+            className="inline-flex items-center gap-2 bg-white text-primary backdrop-blur-sm border border-primary/25  px-7 py-3.5 rounded-full text-sm font-medium hover:bg-white/70 transition-all w-fit"
           >
             View Templates
             <ArrowUpRight className="w-4 h-4 opacity-60" />

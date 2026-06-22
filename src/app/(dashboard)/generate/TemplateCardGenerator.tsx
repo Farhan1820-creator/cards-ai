@@ -260,7 +260,7 @@ overlayConfig={selectedTemplate?.overlayConfig ?? undefined}  // ← add yeh lin
       {/* Main Action Button */}
       <Button
         size="lg"
-        className="w-full h-10 text-sm font-semibold shadow-md transition-all bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600"
+        className="w-full h-10 text-sm font-semibold shadow-md transition-all bg-black hover:bg-black/85"
         onClick={handleGenerate}
         disabled={isButtonDisabled}
       >

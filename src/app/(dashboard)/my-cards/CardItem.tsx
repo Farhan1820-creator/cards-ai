@@ -104,10 +104,10 @@ function CardItemComponent({
         {!selectMode && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button
-                className="shrink-0 h-6 w-6 flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
-                onClick={stopPropagation}
-              >
+    <button
+  className="shrink-0 h-6 w-6 flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted transition-colors opacity-100"
+  onClick={stopPropagation}
+>
                 <MoreVertical className="h-3.5 w-3.5" />
               </button>
             </DropdownMenuTrigger>

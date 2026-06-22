@@ -164,7 +164,7 @@ export function DashboardSidebar({ user }: { user: SidebarUser }) {
               <div className={cn(
                 "flex h-11 w-11 items-center justify-center rounded-xl transition-all duration-200",
                 active
-                  ? "bg-violet-100 text-primary"
+                  ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}>
                 <Icon className="h-5 w-5" />
@@ -184,7 +184,7 @@ export function DashboardSidebar({ user }: { user: SidebarUser }) {
         {/* Avatar */}
         <button
           onClick={() => setPopoverOpen((v) => !v)}
-          className="mt-2 rounded-full hover:ring-2 hover:ring-primary transition-all"
+          className="mt-2 rounded-full hover:ring-1 hover:ring-primary transition-all"
         >
           <Avatar image={user.image} name={user.name} email={user.email} />
         </button>
@@ -242,7 +242,7 @@ export function DashboardSidebar({ user }: { user: SidebarUser }) {
                   isCreate
                     ? "bg-primary text-white"
                     : active
-                      ? "bg-violet-100 text-primary"
+                      ? "bg-primary/10 text-primary"
                       : "text-muted-foreground"
                 )}>
                   <Icon className="h-5 w-5" />
@@ -252,7 +252,7 @@ export function DashboardSidebar({ user }: { user: SidebarUser }) {
                   isCreate
                     ? "text-primary"
                     : active
-                      ? "text-violet-600"
+                      ? "text-primary"
                       : "text-muted-foreground"
                 )}>
                   {item.label}
