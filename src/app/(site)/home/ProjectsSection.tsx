@@ -104,7 +104,7 @@ export default function TemplatesSection() {
               </button>
 
               {/* dots */}
-              <div className="flex items-center gap-1.5">
+              {/* <div className="flex items-center gap-1.5">
                 {projects.map((_, i) => (
                   <button
                     key={i}
@@ -115,7 +115,7 @@ export default function TemplatesSection() {
                     aria-label={`Slide ${i + 1}`}
                   />
                 ))}
-              </div>
+              </div> */}
 
               <button
                 onClick={next}
@@ -127,9 +127,9 @@ export default function TemplatesSection() {
             </div>
 
             {/* counter */}
-            <p className="mt-3 text-xs text-gray-400 tabular-nums">
+            {/* <p className="mt-3 text-xs text-gray-400 tabular-nums">
               {String(current + 1).padStart(2, "0")} / {String(projects.length).padStart(2, "0")}
-            </p>
+            </p> */}
           </div>
 
         </div>
