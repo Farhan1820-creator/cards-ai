@@ -7,10 +7,10 @@ import { ArrowRight, ExternalLink } from "lucide-react";
 const visionImage ="https://res.cloudinary.com/dggey8rb6/image/upload/v1782189865/unnamed_mmmub6.webp"
 export default function About() {
   return (
-    <main className="bg-white text-gray-900 font-sans overflow-x-hidden">
+    <main className="bg-white text-gray-900 font-sans overflow-x-hidden flex flex-col justify-center items-center">
 
       {/* ── Hero ── */}
-      <section className="px-6 md:px-12 pt-20 pb-16 max-w-5xl mx-auto text-center">
+      <section className="width-padding pt-20 pb-16 mx-auto text-center">
         <p className="text-xs font-semibold tracking-widest uppercase text-black/55 mb-6">
           About Cards AI
         </p>
@@ -19,7 +19,7 @@ export default function About() {
           <br />
           <span className="text-primary">made in seconds.</span>
         </h1>
-        <p className="mt-6 text-base md:text-lg text-gray-500 leading-relaxed">
+        <p className="mt-6 text-base md:text-lg text-gray-500 leading-relaxed max-w-4xl mx-auto">
           Cards AI gives you a growing library of professionally designed
           templates. Pick one, personalise it, and share — done in under a
           minute.
@@ -27,12 +27,12 @@ export default function About() {
       </section>
 
       {/* ── Divider ── */}
-      <div className="max-w-5xl mx-auto px-6 md:px-12">
+      <div className="mx-auto width-padding">
         <div className="h-px bg-gray-100" />
       </div>
 
       {/* ── How it works ── */}
-      <section className="px-6 md:px-12 py-16 max-w-5xl mx-auto">
+      <section className="width-padding py-16 mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
           {/* Method 1 — Templates */}
@@ -87,7 +87,7 @@ export default function About() {
       </section>
 
       {/* ── Divider ── */}
-      <div className="max-w-5xl mx-auto px-6 md:px-12">
+      <div className="width-padding mx-auto ">
         <div className="h-px bg-gray-100" />
       </div>
 
@@ -110,12 +110,12 @@ export default function About() {
       </section> */}
 
       {/* ── Divider ── */}
-      <div className="max-w-5xl mx-auto px-6 md:px-12">
+      <div className="width-padding mx-auto">
         <div className="h-px bg-gray-100" />
       </div>
 
       {/* ── Built by Taiba Creations ── */}
-      <section className="px-6 md:px-12 py-16 max-w-5xl  sm:max-w-full mx-auto">
+      <section className=" py-16 width-padding  sm:max-w-full mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center sm:justify-center">
           <div className="text-center lg:text-start">
             <p className="text-xs font-semibold tracking-widest uppercase text-primary mb-4">
@@ -160,7 +160,7 @@ export default function About() {
       </section>
 
       {/* ── CTA ── */}
-      <section className="px-6 md:px-12 pb-20 max-w-5xl mx-auto">
+      <section className=" pb-20 width-padding mx-auto">
         <div
           className="rounded-2xl px-8 py-10 md:py-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-6"
           style={{ backgroundColor: "#4E99DF" }}
@@ -175,7 +175,7 @@ export default function About() {
           </div>
           <div className="flex flex-col sm:flex-row gap-3 shrink-0">
             <Link
-              href="/dashboard"
+              href="/templates"
               className="inline-flex items-center justify-center gap-2 bg-white text-primary px-6 py-3 text-sm font-bold rounded-xl hover:bg-blue-50 transition-colors"
             >
               Browse Templates <ArrowRight className="w-4 h-4" />

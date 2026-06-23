@@ -20,7 +20,7 @@ const footerLinks = {
 export default function Footer() {
   return (
     <footer className="border-t border-gray-200 bg-primary">
-      <div className="max-w-9xl mx-auto px-6 lg:px-8 py-12">
+      <div className="width-padding mx-auto py-12">
         <div className="grid md:grid-cols-4 gap-8 mb-8">
           <div>
             <span className="text-xl font-bold text-primary-foreground">Cards AI</span>

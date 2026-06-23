@@ -6,25 +6,25 @@ const heroBg = "https://res.cloudinary.com/dggey8rb6/image/upload/v1782116303/he
 
 export default function HeroSection() {
   return (
-    <section className="relative w-full h-[90vh] min-h-[560px] max-h-[960px] overflow-hidden">
+    <section className="relative w-full bg-[url(/hero_swgtra.png)] bg-cover sm:bg-center md:min-h-screen h-[550px]">
       {/* Background Image */}
-      <Image
+      {/* <Image
         src={heroBg}
         alt="Cards AI hero background"
         fill
         className="object-cover object-right"
         priority
-      />
+      /> */}
 
       {/* Dark overlay — heavier at bottom, light at top */}
       <div className="absolute inset-0 bg-gradient-to-t from-white/20 via-white/15 to-white/5 z-10" />
 
       {/* Bottom-left Content */}
-      <div className="absolute bottom-0 left-0 z-20 px-6 pb-12 sm:px-10 sm:pb-14 md:px-14 md:pb-16 lg:px-20 lg:pb-20 max-w-3xl">
+      <div className="flex flex-col justify-center w-full relative z-20 md:min-h-screen h-[550px] width-padding mx-auto">
 
         {/* Subtitle */}
         <p className="text-black/55 text-xs sm:text-sm font-medium uppercase tracking-widest mb-3">
-Start with Premium Templates
+          Start with Premium Templates
         </p>
 
         {/* Heading */}
@@ -36,8 +36,8 @@ Start with Premium Templates
         </h1>
 
         {/* Description */}
-        <p className="text-black/65  text-sm sm:text-base md:text-lg max-w-md mb-8 leading-relaxed">
-         Choose from professionally designed templates and create beautiful, personalized greeting cards in minutes.
+        <p className="text-black/65  text-sm sm:text-base md:text-lg md:max-w-md max-w-[250px] mb-8 leading-relaxed">
+          Choose from professionally designed templates and create beautiful, personalized greeting cards in minutes.
         </p>
 
         {/* CTAs */}

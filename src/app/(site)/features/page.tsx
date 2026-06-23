@@ -52,10 +52,10 @@ function CheckList({ items }: { items: string[] }) {
 
 export default function FeaturesPage() {
   return (
-    <main className="bg-white text-gray-900 font-sans overflow-x-hidden">
+    <main className="bg-white text-gray-900 font-sans overflow-x-hidden flex flex-col justify-center items-center">
 
       {/* ── Hero ── */}
-      <section className="px-6 md:px-12 pt-20 pb-16 max-w-5xl mx-auto text-center">
+      <section className="pt-20 pb-16 text-center width-padding">
         <p className="text-[10px] font-bold tracking-widest uppercase text-black/55 mb-6">
           Features
         </p>
@@ -64,19 +64,19 @@ export default function FeaturesPage() {
           <br />
           <span className="text-primary">can do for you.</span>
         </h1>
-        <p className="mt-6 text-base md:text-lg text-gray-500 leading-relaxed max-w-xl mx-auto">
+        <p className="mt-6 text-base md:text-lg text-gray-500 leading-relaxed max-w-4xl mx-auto">
           Two ways to create beautiful greeting cards — template-based in minutes,
           or fully AI-generated. Plus a dashboard to manage everything you&apos;ve made.
         </p>
       </section>
 
       {/* ── Divider ── */}
-      <div className="max-w-5xl mx-auto px-6 md:px-12">
+      <div className="mx-auto width-padding">
         <div className="h-px bg-gray-100" />
       </div>
 
       {/* ── Template Flow ── */}
-      <section className="px-6 md:px-12 py-16 max-w-5xl mx-auto">
+      <section className=" py-16 width-padding mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center lg:items-start">
 
           <div className="text-center lg:text-start">
@@ -104,7 +104,7 @@ export default function FeaturesPage() {
             <CheckList items={TEMPLATE_ACTIONS} />
             <div className="mt-7 pt-5 border-t border-gray-100">
               <Link
-                href="/dashboard"
+                href="/templates"
                 className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:gap-2.5 transition-all"
               >
                 Browse templates <ArrowRight className="w-4 h-4" />
@@ -116,12 +116,12 @@ export default function FeaturesPage() {
       </section>
 
       {/* ── Divider ── */}
-      <div className="max-w-5xl mx-auto px-6 md:px-12">
+      <div className="width-padding mx-auto">
         <div className="h-px bg-gray-100" />
       </div>
 
       {/* ── AI Flow ── */}
-      <section className="px-6 md:px-12 py-16 max-w-5xl mx-auto">
+      <section className="width-padding py-16  mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 text-center lg:text-start">
 
           <div>
@@ -169,12 +169,12 @@ export default function FeaturesPage() {
       </section>
 
       {/* ── Divider ── */}
-      <div className="max-w-5xl mx-auto px-6 md:px-12">
+      <div className="width-padding mx-auto ">
         <div className="h-px bg-gray-100" />
       </div>
 
       {/* ── Dashboard / Recent Projects ── */}
-      <section className="px-6 md:px-12 py-16 max-w-5xl mx-auto">
+      <section className="py-16 width-padding mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center text-center lg:text-start">
 
           <div>
@@ -212,7 +212,7 @@ export default function FeaturesPage() {
       </section>
 
       {/* ── CTA ── */}
-      <section className="px-6 md:px-12 pb-20 max-w-5xl mx-auto">
+      <section className="pb-20 width-padding mx-auto">
         <div className="bg-primary rounded-2xl px-8 py-10 md:py-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div>
             <h2 className="text-2xl md:text-3xl font-black text-primary-foreground leading-tight">
@@ -224,7 +224,7 @@ export default function FeaturesPage() {
           </div>
           <div className="flex flex-col sm:flex-row gap-3 shrink-0">
             <Link
-              href="/dashboard"
+              href="/templates"
               className="inline-flex items-center justify-center gap-2 bg-white text-primary px-6 py-3 text-sm font-bold rounded-xl hover:bg-blue-50 transition-colors"
             >
               Browse Templates <ArrowRight className="w-4 h-4" />

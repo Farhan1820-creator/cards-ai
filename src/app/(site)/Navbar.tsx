@@ -150,7 +150,7 @@ export default function Navbar() {
       transition-all duration-300
       ${navBg[mode]}
     `}>
-      <div className="max-w-9xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto width-padding">
         <div className="flex justify-between items-center h-16">
 
           {/* Logo */}

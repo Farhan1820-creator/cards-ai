@@ -23,10 +23,10 @@ const faqs = [
 
 export default function ContactPage() {
   return (
-    <main className="bg-white text-gray-900 font-sans overflow-x-hidden">
+    <main className="bg-white text-gray-900 font-sans overflow-x-hidden flex flex-col justify-center items-center">
 
       {/* ── Hero ── */}
-      <section className="px-6 md:px-12 pt-20 pb-16 max-w-5xl mx-auto text-center">
+      <section className="width-padding pt-20 pb-16  mx-auto text-center">
         <p className="text-[10px] font-bold tracking-widest uppercase text-black/55 mb-6">
           Contact
         </p>
@@ -35,19 +35,19 @@ export default function ContactPage() {
           <br />
           <span className="text-primary">help.</span>
         </h1>
-        <p className="mt-6 text-base md:text-lg text-gray-500 leading-relaxed max-w-xl mx-auto">
+        <p className="mt-6 text-base md:text-lg text-gray-500 leading-relaxed max-w-4xl mx-auto">
           Got a question, feedback, or a custom request? Reach out through
           any of the channels below — we usually respond within 24 hours.
         </p>
       </section>
 
       {/* ── Divider ── */}
-      <div className="max-w-5xl mx-auto px-6 md:px-12">
+      <div className="width-padding mx-auto">
         <div className="h-px bg-gray-100" />
       </div>
 
       {/* ── Contact Channels ── */}
-      <section className="px-6 md:px-12 py-16 max-w-5xl mx-auto">
+      <section className="width-padding py-16 mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
           {/* Email */}
@@ -128,12 +128,12 @@ export default function ContactPage() {
       </section>
 
       {/* ── Divider ── */}
-      <div className="max-w-5xl mx-auto px-6 md:px-12">
+      <div className="width-padding mx-auto ">
         <div className="h-px bg-gray-100" />
       </div>
 
       {/* ── FAQ ── */}
-      <section className="px-6 md:px-12 py-16 max-w-5xl mx-auto">
+      <section className="width-padding py-16  mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
 
           <div className="text-center lg:text-start">
@@ -168,12 +168,12 @@ export default function ContactPage() {
       </section>
 
       {/* ── Divider ── */}
-      <div className="max-w-5xl mx-auto px-6 md:px-12">
+      <div className="width-padding mx-auto ">
         <div className="h-px bg-gray-100" />
       </div>
 
       {/* ── Social + Bottom note ── */}
-      <section className="px-6 md:px-12 py-12 max-w-5xl mx-auto">
+      <section className=" py-12 width-padding mx-auto">
         <div className="flex flex-col items-center gap-5 text-center">
 
           {/* Social icons */}

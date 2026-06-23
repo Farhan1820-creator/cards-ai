@@ -1,8 +1,8 @@
 "use client";
 export default function CTA (){
     return (
-           <section className="w-full  pt-16 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
+           <section className="w-full pt-16  flex flex-col justify-center items-center-safe">
+      <div className="width-padding mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
           <div className="flex items-center">
             <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 leading-tight">
