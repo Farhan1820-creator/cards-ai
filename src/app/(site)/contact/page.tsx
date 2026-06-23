@@ -1,171 +1,218 @@
 "use client";
 
-import { Mail, Phone, MapPin, Clock, Github, Twitter, Instagram } from "lucide-react";
-import Image from "next/image";
-
-const contactInfo = [
-  {
-    icon: <Mail className="w-5 h-5" />,
-    title: "Email us",
-    value: "hello@cardsai.com",
-    link: "mailto:hello@cardsai.com",
-    linkLabel: "Send an email",
-  },
-  {
-    icon: <Phone className="w-5 h-5" />,
-    title: "Call us",
-    value: "+1 (555) 123-4567",
-    link: "tel:+15551234567",
-    linkLabel: "Call now",
-  },
-  {
-    icon: <MapPin className="w-5 h-5" />,
-    title: "Location",
-    value: "123 Design Street",
-    sub: "Creative City",
-  },
-  {
-    icon: <Clock className="w-5 h-5" />,
-    title: "Response time",
-    value: "Within 24–48 hrs",
-    sub: "Business days only",
-  },
-];
+import { Mail, Phone, MessageCircle, Twitter, Instagram, Facebook, Linkedin } from "lucide-react";
 
 const faqs = [
   {
-    question: "How quickly will I receive a response?",
-    answer: "We aim to respond to all inquiries within 24–48 hours on business days.",
+    q: "How quickly will you respond?",
+    a: "We aim to reply to all messages within 24–48 hours on business days.",
   },
   {
-    question: "Can I request a custom template?",
-    answer: "Yes! Reach out with your requirements and our team will get back to you with options.",
+    q: "Can I request a custom template?",
+    a: "Yes! Send us your requirements via email and our team will get back to you with options.",
   },
   {
-    question: "Is my data secure with Cards AI?",
-    answer: "Absolutely. We use enterprise-grade encryption and never share your data with third parties.",
+    q: "I found a bug — who do I contact?",
+    a: "Email us at info@taibacreations.com with a short description and we'll look into it right away.",
+  },
+  {
+    q: "Is Cards AI free to use?",
+    a: "Yes, Cards AI is free to start — no credit card needed. Create an account and start generating cards today.",
   },
 ];
-
-const socials = [
-  { icon: <Twitter className="w-4 h-4" />, href: "#", label: "Twitter" },
-  { icon: <Instagram className="w-4 h-4" />, href: "#", label: "Instagram" },
-  { icon: <Github className="w-4 h-4" />, href: "#", label: "GitHub" },
-];
-
-interface SectionHeadingProps {
-  children: React.ReactNode;
-  subtitle?: string;
-  align?: "left" | "center";
-  inverse?: boolean;
-}
-
-
-function SectionHeading({ children, subtitle, align = "left", inverse = false }: SectionHeadingProps) {
-  return (
-    <div className={`mb-10 md:mb-14 ${align === "center" ? "text-center" : ""}`}>
-      {subtitle && (
-        <span className={`inline-block text-[10px] font-bold tracking-[0.35em] uppercase mb-4 ${
-          inverse ? "text-purple-200" : "text-purple-600"
-        }`}>
-          {subtitle}
-        </span>
-      )}
-      <h2 className={`text-3xl md:text-4xl lg:text-5xl font-black tracking-tight leading-tight ${
-        inverse ? "text-white" : "text-gray-900"
-      }`}>
-        {children}
-      </h2>
-    </div>
-  );
-}
 
 export default function ContactPage() {
   return (
-    <main className="min-h-screen">
+    <main className="bg-white text-gray-900 font-sans overflow-x-hidden">
 
       {/* ── Hero ── */}
-      <section className="border-b border-gray-100">
-        <div className="max-w-4xl mx-auto px-6 lg:px-8 py-16 lg:py-20 text-center flex flex-col items-center justify-center">
-   <SectionHeading subtitle="Contact" align="center">
-      Get in touch
-    </SectionHeading>
-          <p className="text-gray-500 text-lg max-w-xl">
-            Have questions about Cards AI? We are here to help. Reach out through any of the
-            channels below and we will respond as soon as possible.
-          </p>
+      <section className="px-6 md:px-12 pt-20 pb-16 max-w-5xl mx-auto text-center">
+        <p className="text-[10px] font-bold tracking-widest uppercase text-black/55 mb-6">
+          Contact
+        </p>
+        <h1 className="text-4xl md:text-6xl font-black leading-[1.1] tracking-tight text-gray-900">
+          We&apos;re here to
+          <br />
+          <span className="text-primary">help.</span>
+        </h1>
+        <p className="mt-6 text-base md:text-lg text-gray-500 leading-relaxed max-w-xl mx-auto">
+          Got a question, feedback, or a custom request? Reach out through
+          any of the channels below — we usually respond within 24 hours.
+        </p>
+      </section>
+
+      {/* ── Divider ── */}
+      <div className="max-w-5xl mx-auto px-6 md:px-12">
+        <div className="h-px bg-gray-100" />
+      </div>
+
+      {/* ── Contact Channels ── */}
+      <section className="px-6 md:px-12 py-16 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+          {/* Email */}
+          <a
+            href="mailto:info@taibacreations.com"
+            className="group rounded-2xl border border-gray-100 p-7 hover:border-primary/30 hover:shadow-sm transition-all flex flex-col gap-4"
+          >
+            <div className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center text-primary-foreground">
+              <Mail className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold tracking-widest uppercase text-black/55 mb-1">
+                Email
+              </p>
+              <p className="text-sm font-bold text-gray-900 mb-1">
+                info@taibacreations.com
+              </p>
+              <p className="text-xs text-gray-400">
+                For general queries & support
+              </p>
+            </div>
+            <span className="text-xs font-semibold text-primary group-hover:underline mt-auto">
+              Send an email →
+            </span>
+          </a>
+
+          {/* Phone */}
+          <a
+            href="tel:+923341100088"
+            className="group rounded-2xl border border-gray-100 p-7 hover:border-primary/30 hover:shadow-sm transition-all flex flex-col gap-4"
+          >
+            <div className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center text-primary-foreground">
+              <Phone className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold tracking-widest uppercase text-black/55 mb-1">
+                Phone
+              </p>
+              <p className="text-sm font-bold text-gray-900 mb-1">
+                +92 334 1100088
+              </p>
+              <p className="text-xs text-gray-400">
+                Business days, 9 AM – 6 PM PKT
+              </p>
+            </div>
+            <span className="text-xs font-semibold text-primary group-hover:underline mt-auto">
+              Call now →
+            </span>
+          </a>
+
+          {/* WhatsApp */}
+          <a
+            href="https://wa.me/923341100088"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group rounded-2xl border border-gray-100 p-7 hover:border-primary/30 hover:shadow-sm transition-all flex flex-col gap-4"
+          >
+            <div className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center text-primary-foreground">
+              <MessageCircle className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold tracking-widest uppercase text-black/55 mb-1">
+                WhatsApp
+              </p>
+              <p className="text-sm font-bold text-gray-900 mb-1">
+                +92 334 1100088
+              </p>
+              <p className="text-xs text-gray-400">
+                Quick replies, usually same day
+              </p>
+            </div>
+            <span className="text-xs font-semibold text-primary group-hover:underline mt-auto">
+              Chat on WhatsApp →
+            </span>
+          </a>
+
         </div>
       </section>
 
-      <div className="max-w-4xl mx-auto px-6 lg:px-8 py-16 space-y-16">
+      {/* ── Divider ── */}
+      <div className="max-w-5xl mx-auto px-6 md:px-12">
+        <div className="h-px bg-gray-100" />
+      </div>
 
-        {/* ── Illustration banner ── */}
-        <div className="relative rounded-2xl overflow-hidden border border-gray-100 bg-primary/5 h-72 flex items-center justify-center">
-          <Image
-            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSvdCLAeueNNp56xjGhmaGBeY5N822MWgGrM0F0veACHw&s=10"  
-            alt="Contact illustration"
-            fill
-            className="object-cover object-top"
-          />
-          {/* fallback text agar image nahi */}
-          <p className="relative z-10 text-gray/40 text-sm select-none">
-            We reply within 24 hours
-          </p>
-        </div>
+      {/* ── FAQ ── */}
+      <section className="px-6 md:px-12 py-16 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
 
-        {/* ── Contact cards ── */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {contactInfo.map((item) => (
-            <div
-              key={item.title}
-              className="bg-white rounded-2xl border border-gray-100 p-5 flex flex-col gap-3"
-            >
-              <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                {item.icon}
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-1">{item.title}</p>
-                <p className="text-sm font-semibold text-gray-900">{item.value}</p>
-                {item.link ? (
-                  <a href={item.link} className="text-xs text-primary mt-1 inline-block hover:underline">
-                    {item.linkLabel}
-                  </a>
-                ) : (
-                  <span className="text-xs text-gray-400 mt-1 inline-block">{item.sub}</span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+          <div className="text-center lg:text-start">
+            <p className="text-[10px] font-bold tracking-widest uppercase text-black/55 mb-4">
+              FAQ
+            </p>
+            <h2 className="text-2xl md:text-3xl font-black text-gray-900 leading-tight mb-4">
+              Common questions
+            </h2>
+            <p className="text-sm text-gray-500 leading-relaxed">
+              Can&apos;t find what you&apos;re looking for? Email us at{" "}
+              <a
+                href="mailto:info@taibacreations.com"
+                className="text-primary font-semibold hover:underline"
+              >
+                info@taibacreations.com
+              </a>{" "}
+              and we&apos;ll get back to you.
+            </p>
+          </div>
 
-        {/* ── FAQ ── */}
-        <div>
-          <h2 className="text-lg font-bold text-gray-900 mb-5">Frequently asked questions</h2>
           <div className="divide-y divide-gray-100 border-y border-gray-100">
             {faqs.map((faq) => (
-              <div key={faq.question} className="py-5">
-                <p className="text-sm font-semibold text-gray-900 mb-1.5">{faq.question}</p>
-                <p className="text-sm text-gray-500 leading-relaxed">{faq.answer}</p>
+              <div key={faq.q} className="py-5 text-center lg:text-start">
+                <p className="text-sm font-bold text-gray-900 mb-1.5">{faq.q}</p>
+                <p className="text-sm text-gray-500 leading-relaxed">{faq.a}</p>
               </div>
             ))}
           </div>
-        </div>
 
-        {/* ── Social ── */}
-        <div className="flex flex-wrap items-center gap-3">
-          {socials.map(({ icon, href, label }) => (
-            <a
-              key={label}
-              href={href}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-            >
-              {icon}
-              {label}
-            </a>
-          ))}
         </div>
+      </section>
 
+      {/* ── Divider ── */}
+      <div className="max-w-5xl mx-auto px-6 md:px-12">
+        <div className="h-px bg-gray-100" />
       </div>
+
+      {/* ── Social + Bottom note ── */}
+      <section className="px-6 md:px-12 py-12 max-w-5xl mx-auto">
+        <div className="flex flex-col items-center gap-5 text-center">
+
+          {/* Social icons */}
+          <div className="flex items-center gap-3">
+            {[
+              { icon: <Facebook className="w-4 h-4" />, href: "https://www.facebook.com/taibacreations", label: "Facebook" },
+              { icon: <Instagram className="w-4 h-4" />, href: "https://www.instagram.com/taibacreations", label: "Instagram" },
+              { icon: <Twitter className="w-4 h-4" />, href: "https://twitter.com/taibacreations", label: "Twitter" },
+              { icon: <Linkedin className="w-4 h-4" />, href: "https://www.linkedin.com/company/taibacreations", label: "LinkedIn" },
+            ].map(({ icon, href, label }) => (
+              <a
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={label}
+                className="w-9 h-9 rounded-xl border border-gray-100 flex items-center justify-center text-gray-400 hover:border-primary/30 hover:text-primary hover:bg-primary/5 transition-all"
+              >
+                {icon}
+              </a>
+            ))}
+          </div>
+
+          <p className="text-sm text-gray-400">
+            Cards AI is a product of{" "}
+            <a
+              href="https://taibacreations.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary font-semibold hover:underline"
+            >
+              Taiba Creations
+            </a>
+            {" "}— a full-service IT agency based in Pakistan.
+          </p>
+
+        </div>
+      </section>
+
     </main>
   );
 }

@@ -1,217 +1,192 @@
 "use client";
 
-import React from "react";
-import Image from "next/image";
 import Link from "next/link";
-import { Wand2, Shield, Users, Globe, ArrowRight, Lock, Zap, Sparkles } from "lucide-react";
+import Image from "next/image";
+import { ArrowRight, ExternalLink } from "lucide-react";
 
-const visionImage = "https://res.cloudinary.com/dggey8rb6/image/upload/v1781094557/WhatsApp_Image_2026-06-10_at_12.50.07_wsom5m.jpg";
-
-// ─── Utility Components ───────────────────────────────────────
-
-interface SectionHeadingProps {
-  children: React.ReactNode;
-  subtitle?: string;
-  align?: "left" | "center";
-  inverse?: boolean;
-}
-
-function SectionHeading({ children, subtitle, align = "left", inverse = false }: SectionHeadingProps) {
-  return (
-    <div className={`mb-10 md:mb-14 ${align === "center" ? "text-center" : ""}`}>
-      {subtitle && (
-        <span className={`inline-block text-[10px] font-bold tracking-[0.35em] uppercase mb-4 ${
-          inverse ? "text-purple-200" : "text-purple-600"
-        }`}>
-          {subtitle}
-        </span>
-      )}
-      <h2 className={`text-3xl md:text-4xl lg:text-5xl font-black tracking-tight leading-tight ${
-        inverse ? "text-white" : "text-gray-900"
-      }`}>
-        {children}
-      </h2>
-    </div>
-  );
-}
-
-interface StatItemProps {
-  value: string;
-  label: string;
-}
-
-function StatItem({ value, label }: StatItemProps) {
-  return (
-    <div className="flex flex-col">
-      <span className="text-2xl md:text-3xl font-black text-purple-600">{value}</span>
-      <span className="text-[10px] font-bold tracking-[0.2em] uppercase mt-2 text-gray-500">{label}</span>
-    </div>
-  );
-}
-
-interface PrincipleCardProps {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}
-
-function PrincipleCard({ icon, title, description }: PrincipleCardProps) {
-  return (
-    <div className="p-5 md:p-6 bg-white rounded-2xl border border-purple-100 hover:border-purple-300 hover:shadow-lg transition-all">
-      <div className="w-10 h-10 mb-4 flex items-center justify-center bg-purple-50 rounded-xl text-purple-600">
-        {icon}
-      </div>
-      <h3 className="text-base font-bold text-gray-900 mb-2">{title}</h3>
-      <p className="text-sm leading-relaxed text-gray-600">{description}</p>
-    </div>
-  );
-}
-
-// ─── Main Component ───────────────────────────────────────────
-
+const visionImage ="https://res.cloudinary.com/dggey8rb6/image/upload/v1782189865/unnamed_mmmub6.webp"
 export default function About() {
   return (
-    <main className="text-gray-900 font-sans overflow-x-hidden">
+    <main className="bg-white text-gray-900 font-sans overflow-x-hidden">
 
-      {/* Vision */}
-{/* Vision */}
-<section className="py-16 md:pb-24 px-6 md:px-8 max-w-9xl mx-auto">
-  <div className="max-w-3xl mx-auto text-center space-y-6">
-
-    <SectionHeading subtitle="Our Story" align="center">
-      Cards for Every Occasion
-    </SectionHeading>
-
-    <div className="space-y-4 text-gray-600 leading-relaxed">
-      <p>
-        Founded in 2024, Cards AI was built on a simple belief — sending a thoughtful greeting card should be easy, beautiful, and personal.
-      </p>
-      <p>
-        We offer a growing library of professionally designed templates for birthdays, weddings, holidays, and more. Pick a template, personalize it, and share it instantly.
-      </p>
-      <p className="font-semibold text-gray-900">
-        Today, 50,000+ people trust Cards AI to help them express what words alone sometimes can&apost.
-      </p>
-    </div>
-
-    <div className="flex items-center justify-center gap-12 pt-6 border-t border-purple-100">
-      <StatItem value="50k+" label="Active Users" />
-      <StatItem value="2M+" label="Cards Sent" />
-      <StatItem value="500+" label="Templates" />
-    </div>
-
-  </div>
-</section>
-
-      {/* Features */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-9xl mx-auto px-6 md:px-8">
-          <SectionHeading subtitle="Why Cards AI" align="center">
-            Everything You Need
-          </SectionHeading>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <PrincipleCard
-              icon={<Wand2 className="w-5 h-5" />}
-              title="Beautiful Templates"
-              description="Choose from hundreds of professionally designed cards for every occasion — birthdays, weddings, holidays, and more."
-            />
-            <PrincipleCard
-              icon={<Shield className="w-5 h-5" />}
-              title="Privacy First"
-              description="Your messages and personal data stay private. We never share or sell your information."
-            />
-            <PrincipleCard
-              icon={<Users className="w-5 h-5" />}
-              title="Easy Sharing"
-              description="Send cards digitally via link, email, or download them to print — your choice, every time."
-            />
-          </div>
-        </div>
+      {/* ── Hero ── */}
+      <section className="px-6 md:px-12 pt-20 pb-16 max-w-5xl mx-auto text-center">
+        <p className="text-xs font-semibold tracking-widest uppercase text-black/55 mb-6">
+          About Cards AI
+        </p>
+        <h1 className="text-4xl md:text-6xl font-black leading-[1.1] tracking-tight text-gray-900">
+          Greeting cards,
+          <br />
+          <span className="text-primary">made in seconds.</span>
+        </h1>
+        <p className="mt-6 text-base md:text-lg text-gray-500 leading-relaxed">
+          Cards AI gives you a growing library of professionally designed
+          templates. Pick one, personalise it, and share — done in under a
+          minute.
+        </p>
       </section>
 
-      {/* Trust */}
-      <section className="py-16 bg-primary text-white">
-        <div className="max-w-9xl mx-auto px-6 md:px-8">
-          <div className="text-center mb-14">
-            <span className="inline-block px-4 py-1.5 border border-purple-400/30 text-[10px] font-bold tracking-[0.3em] uppercase mb-5 text-purple-300">
-              Built to Last
+      {/* ── Divider ── */}
+      <div className="max-w-5xl mx-auto px-6 md:px-12">
+        <div className="h-px bg-gray-100" />
+      </div>
+
+      {/* ── How it works ── */}
+      <section className="px-6 md:px-12 py-16 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+          {/* Method 1 — Templates */}
+          <div className="rounded-2xl border border-gray-100 p-7 hover:border-primary/30 hover:shadow-sm transition-all">
+            <span className="text-[10px] font-bold tracking-widest uppercase text-primary">
+              Method 01
             </span>
-            <h2 className="text-3xl md:text-4xl font-black">
-              Reliable, Secure & Fast
+            <h2 className="mt-3 text-xl font-black text-gray-900">
+              Browse & Personalise
             </h2>
+            <p className="mt-3 text-sm text-gray-500 leading-relaxed">
+              Choose from hundreds of templates — birthdays, weddings,
+              Eid, holidays and more. Add your recipient&apos;s name, a
+              personal message, and your photo. Your card is ready to
+              share as a link or download to print.
+            </p>
+            <Link
+              href="/dashboard"
+              className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:gap-2.5 transition-all"
+            >
+              Browse templates <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {[
-              { icon: <Lock className="w-5 h-5" />, title: "End-to-End Encryption", desc: "Your messages are encrypted in transit and at rest." },
-              { icon: <Globe className="w-5 h-5" />, title: "Global Delivery", desc: "Send cards to anyone, anywhere, instantly." },
-              { icon: <Zap className="w-5 h-5" />, title: "Instant Preview", desc: "See exactly how your card looks before you send it." },
-            ].map(({ icon, title, desc }) => (
-              <div key={title} className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-purple-400/30 transition-colors">
-                <div className="text-purple-400 mb-4">{icon}</div>
-                <h4 className="font-bold text-sm mb-2">{title}</h4>
-                <p className="text-white/60 text-xs leading-relaxed">{desc}</p>
-              </div>
-            ))}
+
+          {/* Method 2 — AI (Coming Soon) */}
+          <div className="rounded-2xl border border-gray-100 p-7 relative overflow-hidden opacity-70">
+            <span className="text-[10px] font-bold tracking-widest uppercase text-primary">
+              Method 02
+            </span>
+            <h2 className="mt-3 text-xl font-black text-gray-900">
+              Describe & Generate
+            </h2>
+            <p className="mt-3 text-sm text-gray-500 leading-relaxed">
+              Tell our AI what you&apos;re celebrating, who the card is
+              for, and the mood you want. It handles the rest — layout,
+              colours, copy — and hands you a unique card in seconds.
+            </p>
+            <span className="mt-5 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-gray-400">
+              Coming soon
+            </span>
+            {/* subtle stripe overlay */}
+            <div
+              className="pointer-events-none absolute inset-0 rounded-2xl"
+              style={{
+                backgroundImage:
+                  "repeating-linear-gradient(135deg,transparent,transparent 6px,rgba(0,0,0,0.015) 6px,rgba(0,0,0,0.015) 12px)",
+              }}
+            />
           </div>
+
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-16 md:py-24 px-6 md:px-8 max-w-9xl mx-auto">
-        <div className="bg-primary text-white rounded-3xl p-6 md:p-10 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+      {/* ── Divider ── */}
+      <div className="max-w-5xl mx-auto px-6 md:px-12">
+        <div className="h-px bg-gray-100" />
+      </div>
 
-          <div className="space-y-5">
-            <div>
-              <span className="inline-block px-3 py-1 border border-white/30 text-[10px] font-bold tracking-[0.25em] uppercase mb-4 text-purple-100">
-                Get Started Today
-              </span>
-              <h2 className="text-2xl md:text-4xl font-black leading-tight mb-3">
-                Ready to Send Something Special?
-              </h2>
+      {/* ── Stats ── */}
+      {/* <section className="px-6 md:px-12 py-14 max-w-full text-center mx-auto">
+        <div className="flex flex-wrap gap-12 max-w-full items-center justify-center">
+          {[
+            { value: "50k+", label: "Active users" },
+            { value: "2M+",  label: "Cards sent"   },
+            { value: "500+", label: "Templates"    },
+          ].map(({ value, label }) => (
+            <div key={label}>
+              <p className="text-3xl md:text-4xl font-black text-primary">{value}</p>
+              <p className="mt-1 text-[10px] font-bold tracking-widest uppercase text-gray-400">
+                {label}
+              </p>
             </div>
-            <p className="text-purple-100 leading-relaxed">
-              Join 50,000+ people who use Cards AI to celebrate life&aposs moments — big and small. Free to start, no credit card needed.
+          ))}
+        </div>
+      </section> */}
+
+      {/* ── Divider ── */}
+      <div className="max-w-5xl mx-auto px-6 md:px-12">
+        <div className="h-px bg-gray-100" />
+      </div>
+
+      {/* ── Built by Taiba Creations ── */}
+      <section className="px-6 md:px-12 py-16 max-w-5xl  sm:max-w-full mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center sm:justify-center">
+          <div className="text-center lg:text-start">
+            <p className="text-xs font-semibold tracking-widest uppercase text-primary mb-4">
+              Behind the product
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 pt-2">
-              <Link
-                href="/dashboard"
-                className="group inline-flex items-center justify-center gap-2 bg-white text-primary px-6 py-3.5 text-sm font-bold rounded-xl hover:bg-purple-50 transition-colors"
+            <h2 className="text-2xl md:text-3xl font-black text-gray-900 leading-tight mb-4">
+              A project by<br />Taiba Creations
+            </h2>
+            <p className="text-sm text-gray-500 leading-relaxed mb-3">
+              Cards AI is built by{" "}
+              <a
+                href="https://taibacreations.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary font-semibold hover:underline inline-flex items-center gap-0.5"
               >
-                Browse Templates
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-              </Link>
-              <Link
-                href="/login"
-                className="inline-flex items-center justify-center px-6 py-3.5 text-sm font-bold border border-white/30 rounded-xl hover:bg-white/10 transition-colors"
-              >
-                Create Free Account
-              </Link>
-            </div>
+                Taiba Creations
+                <ExternalLink className="w-3 h-3 ml-0.5" />
+              </a>
+              , a full-service IT agency led by{" "}
+              <span className="font-semibold text-gray-700">Khalid Mehmood</span>.
+            </p>
+            <p className="text-sm text-gray-500 leading-relaxed">
+              The agency specialises in web design, mobile development,
+              e-commerce, branding, and digital marketing — and Cards AI
+              is their flagship product demonstrating what thoughtful
+              design and modern AI can do together.
+            </p>
           </div>
 
-          <div className="relative h-[200px] md:h-[280px] rounded-2xl overflow-hidden border border-white/20">
+          <div className="relative h-56 md:h-64 rounded-2xl overflow-hidden border border-gray-100">
             <Image
               src={visionImage}
-              alt="Cards AI in action"
+              alt="Cards AI preview"
               fill
               className="object-cover"
               sizes="(max-width: 1024px) 100vw, 50vw"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-purple-900/60 to-transparent" />
-            <div className="absolute bottom-4 left-4 right-4 p-3 bg-white/95 backdrop-blur rounded-xl shadow-lg">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-purple-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-xs font-bold text-gray-900">New Template Added</p>
-                  <p className="text-[10px] text-gray-500">Summer Collection — 24 new designs</p>
-                </div>
-                <span className="text-[10px] font-bold text-purple-600">View</span>
-              </div>
-            </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
           </div>
+        </div>
+      </section>
 
+      {/* ── CTA ── */}
+      <section className="px-6 md:px-12 pb-20 max-w-5xl mx-auto">
+        <div
+          className="rounded-2xl px-8 py-10 md:py-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-6"
+          style={{ backgroundColor: "#4E99DF" }}
+        >
+          <div>
+            <h2 className="text-2xl md:text-3xl font-black text-white leading-tight">
+              Ready to send something special?
+            </h2>
+            <p className="mt-2 text-sm text-white/75">
+              Free to start. No credit card needed.
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3 shrink-0">
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center justify-center gap-2 bg-white text-primary px-6 py-3 text-sm font-bold rounded-xl hover:bg-blue-50 transition-colors"
+            >
+              Browse Templates <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link
+              href="/login"
+              className="inline-flex items-center justify-center px-6 py-3 text-sm font-bold border border-white/30 text-white rounded-xl hover:bg-white/10 transition-colors"
+            >
+              Create Free Account
+            </Link>
+          </div>
         </div>
       </section>
 
