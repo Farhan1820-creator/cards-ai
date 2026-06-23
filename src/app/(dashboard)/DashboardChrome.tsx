@@ -20,29 +20,34 @@ interface DashboardChromeProps {
   children: React.ReactNode;
 }
 
-// Ye routes apna poora viewport khud manage karte hain — sidebar/header chrome nahi chahiye
-const FULLSCREEN_ROUTES = ["/generate"];
+// Ab /generate yahan nahi — kyunki desktop pe sidebar chahiye
+const FULLSCREEN_ROUTES: string[] = [];
 
 export function DashboardChrome({ user, children }: DashboardChromeProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const isFullscreenRoute = FULLSCREEN_ROUTES.some((route) => pathname?.startsWith(route));
+  const isFullscreenRoute = FULLSCREEN_ROUTES.some((route) =>
+    pathname?.startsWith(route)
+  );
 
   const [isNavigating, setIsNavigating] = useState(false);
   const currentUrlRef = useRef(`${pathname}?${searchParams.toString()}`);
 
-  // URL actually badal gaya (naya page commit ho chuka) -> spinner hata do
   useEffect(() => {
     currentUrlRef.current = `${pathname}?${searchParams.toString()}`;
     setIsNavigating(false);
   }, [pathname, searchParams]);
 
-  // Kisi bhi internal link pr click hotay hi spinner turant on kar do
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
-        return; // middle-click / ctrl-click wagera new-tab ke liye honge, unhe chhor do
-      }
+      if (
+        e.defaultPrevented ||
+        e.button !== 0 ||
+        e.metaKey ||
+        e.ctrlKey ||
+        e.shiftKey ||
+        e.altKey
+      ) return;
 
       const anchor = (e.target as HTMLElement)?.closest("a");
       if (!anchor) return;
@@ -53,7 +58,7 @@ export function DashboardChrome({ user, children }: DashboardChromeProps) {
       if (!isInternal || opensNewTab || isDownload) return;
 
       const nextUrl = anchor.href.slice(anchor.origin.length);
-      if (nextUrl === currentUrlRef.current) return; // pehle se isi page pr hain
+      if (nextUrl === currentUrlRef.current) return;
 
       setIsNavigating(true);
     }
@@ -66,11 +71,21 @@ export function DashboardChrome({ user, children }: DashboardChromeProps) {
     return <div className="h-screen overflow-hidden bg-background">{children}</div>;
   }
 
+  // /generate route pe check karo
+  const isGenerateRoute = pathname?.startsWith("/generate");
+
   return (
     <div className="min-h-screen bg-background flex">
-      <DashboardSidebar user={user} />
+
+      {/* Sidebar: desktop pe hamesha show, mobile/tablet pe hide */}
+      <div className="hidden md:flex">
+        <DashboardSidebar user={user} />
+      </div>
+
       <div className="flex-1 flex flex-col overflow-y-auto pb-20 md:pb-0">
-        <PageHeadingWrapper />
+        {/* /generate route pe mobile/tablet header nahi chahiye — optional */}
+        {!isGenerateRoute && <PageHeadingWrapper />}
+
         <main className="flex-1 relative">
           {isNavigating && (
             <div
@@ -78,8 +93,11 @@ export function DashboardChrome({ user, children }: DashboardChromeProps) {
               aria-live="polite"
               className="absolute inset-0 z-50 flex items-center justify-center bg-background/70 backdrop-blur-[2px]"
             >
-              <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden="true" />
-              <span className="sr-only">Page load ho raha hai...</span>
+              <Loader2
+                className="h-8 w-8 animate-spin text-primary"
+                aria-hidden="true"
+              />
+              <span className="sr-only">Page loading</span>
             </div>
           )}
           {children}

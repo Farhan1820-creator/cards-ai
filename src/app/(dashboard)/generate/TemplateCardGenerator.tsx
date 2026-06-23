@@ -98,7 +98,12 @@ const autoSaveCard = useCallback(async (image: string) => {
   abortControllerRef.current = controller;
 
   const timeoutId = setTimeout(() => controller.abort(), 15000);
-
+const approxBytes = (image.length * 3) / 4;
+const MAX_BYTES = 9 * 1024 * 1024;
+if (approxBytes > MAX_BYTES) {
+  toast.warning("Could not save card due to large upload image size. You can still download it.", { duration: 6000 });
+  return;
+}
   setIsSaving(true);
   try {
     const url = isEditing ? `/api/user/cards/${existingCardId}` : "/api/user/cards/generate/template";
@@ -118,9 +123,18 @@ body: JSON.stringify({
 });
 
 
-    if (!res.ok) throw new Error("save_failed");
-    const data = await res.json();
-
+if (res.status === 413 || res.status === 500) {
+  toast.warning("Could not save card due to large upload image size. You can still download it.", { duration: 6000 });
+  return;
+}
+if (!res.ok) throw new Error("save_failed");
+let data: { card?: { id?: string } } = {};
+try {
+  data = await res.json();
+} catch {
+  toast.warning("Card may not have saved correctly. You can still download it.");
+  return;
+}
     toast.success(
       <span>
         Card saved to{" "}

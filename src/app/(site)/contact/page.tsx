@@ -1,6 +1,7 @@
 "use client";
 
 import { Mail, Phone, MessageCircle, Twitter, Instagram, Facebook, Linkedin } from "lucide-react";
+import FaqItem from "./FaqItem";
 
 const faqs = [
   {
@@ -133,37 +134,21 @@ export default function ContactPage() {
       </div>
 
       {/* ── FAQ ── */}
-      <section className="width-padding py-16  mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
+     {/* ── FAQ ── */}
+      <section className="width-padding py-16 mx-auto w-full">
+        <div className="text-center mb-10">
+          <p className="text-[10px] font-bold tracking-widest uppercase text-black/55 mb-3">
+            FAQ
+          </p>
+          <h2 className="text-2xl md:text-3xl font-black text-gray-900 leading-tight">
+            Common questions
+          </h2>
+        </div>
 
-          <div className="text-center lg:text-start">
-            <p className="text-[10px] font-bold tracking-widest uppercase text-black/55 mb-4">
-              FAQ
-            </p>
-            <h2 className="text-2xl md:text-3xl font-black text-gray-900 leading-tight mb-4">
-              Common questions
-            </h2>
-            <p className="text-sm text-gray-500 leading-relaxed">
-              Can&apos;t find what you&apos;re looking for? Email us at{" "}
-              <a
-                href="mailto:info@taibacreations.com"
-                className="text-primary font-semibold hover:underline"
-              >
-                info@taibacreations.com
-              </a>{" "}
-              and we&apos;ll get back to you.
-            </p>
-          </div>
-
-          <div className="divide-y divide-gray-100 border-y border-gray-100">
-            {faqs.map((faq) => (
-              <div key={faq.q} className="py-5 text-center lg:text-start">
-                <p className="text-sm font-bold text-gray-900 mb-1.5">{faq.q}</p>
-                <p className="text-sm text-gray-500 leading-relaxed">{faq.a}</p>
-              </div>
-            ))}
-          </div>
-
+        <div className="max-w-2xl mx-auto divide-y divide-gray-100 border border-gray-100 rounded-2xl overflow-hidden">
+          {faqs.map((faq) => (
+            <FaqItem key={faq.q} q={faq.q} a={faq.a} />
+          ))}
         </div>
       </section>
 

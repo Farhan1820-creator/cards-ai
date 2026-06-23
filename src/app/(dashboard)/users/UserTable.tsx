@@ -34,13 +34,15 @@ interface UserTableProps {
   onDeleteClick: (user: User) => void;
 }
 
-
 export function UserTable({ users, deletingId, onDeleteClick }: UserTableProps) {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const perPage = 6;
 
-  const filtered = users.filter((u) =>
+  // descending order — newest first
+  const sorted = [...users].reverse();
+
+  const filtered = sorted.filter((u) =>
     u.name.toLowerCase().includes(search.toLowerCase()) ||
     u.email.toLowerCase().includes(search.toLowerCase()) ||
     u.id.toLowerCase().includes(search.toLowerCase())
@@ -49,6 +51,8 @@ export function UserTable({ users, deletingId, onDeleteClick }: UserTableProps) 
   const totalPages = Math.ceil(filtered.length / perPage);
   const paginated = filtered.slice((currentPage - 1) * perPage, currentPage * perPage);
 
+  // global index for numbering (descending, continuous across pages)
+  const startIndex = (currentPage - 1) * perPage;
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -79,22 +83,31 @@ export function UserTable({ users, deletingId, onDeleteClick }: UserTableProps) 
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/60">
+              <th className="text-left text-xs font-semibold text-slate-400 tracking-wider uppercase px-4 py-3 w-10">#</th>
               <th className="text-left text-xs font-semibold text-slate-400 tracking-wider uppercase px-6 py-3">User</th>
               <th className="text-left text-xs font-semibold text-slate-400 tracking-wider uppercase px-4 py-3">User ID</th>
               <th className="text-left text-xs font-semibold text-slate-400 tracking-wider uppercase px-4 py-3">Status</th>
               <th className="text-left text-xs font-semibold text-slate-400 tracking-wider uppercase px-4 py-3">Created</th>
+              <th className="px-6 py-3 w-20" />
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {paginated.length === 0 ? (
               <tr>
-                <td colSpan={5} className="text-center py-16 text-slate-400 text-sm">
+                <td colSpan={6} className="text-center py-16 text-slate-400 text-sm">
                   {search ? `No users found for "${search}"` : "No users in database yet."}
                 </td>
               </tr>
             ) : (
-              paginated.map((user) => (
-                <tr key={user.id} className="hover:bg-slate-50/70 transition-colors group">
+              paginated.map((user, i) => (
+                <tr key={user.id} className="hover:bg-slate-50/70 transition-colors">
+                  {/* # */}
+                  <td className="px-4 py-4">
+                    <span className="text-xs font-medium text-slate-400 tabular-nums">
+                      {startIndex + i + 1}
+                    </span>
+                  </td>
+                  {/* User */}
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <Avatar user={user} size="md" />
@@ -104,28 +117,33 @@ export function UserTable({ users, deletingId, onDeleteClick }: UserTableProps) 
                       </div>
                     </div>
                   </td>
+                  {/* ID — last 4 chars */}
                   <td className="px-4 py-4">
                     <span className="font-mono text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-lg">
-                      {user.id}
+                    {user.dbId.slice(-4)}
                     </span>
                   </td>
+                  {/* Status */}
                   <td className="px-4 py-4">
                     <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                       Active
                     </span>
                   </td>
+                  {/* Created */}
                   <td className="px-4 py-4 text-slate-500 text-xs">
                     {formatDate(user.createdAt)}
                   </td>
+                  {/* Actions */}
                   <td className="px-6 py-4">
-                  <div className="flex items-center gap-1">                      <a
+                    <div className="flex items-center gap-1">
+                      <a
                         href={`/my-cards?user=${encodeURIComponent(user.email)}`}
                         className="p-1.5 rounded-lg hover:bg-primary/10 text-slate-400 hover:text-primary transition-colors"
                         title="See Cards"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                         </svg>
                       </a>
                       <button

@@ -63,10 +63,10 @@ function GeneratePageContent() {
 
   // ── Template mode state ──────────────────────────────────────────────────────
   const [tmplRecipientName, setTmplRecipientName] = useState(
-    searchParams.get("recipientName") ?? "Name"
+    searchParams.get("recipientName") ?? ""
   );
   const [tmplMessage, setTmplMessage] = useState(
-    searchParams.get("message") ?? "Enter Message here"
+    searchParams.get("message") ?? ""
   );
   const [nameColor, setNameColor] = useState(
     searchParams.get("nameColor") ?? DEFAULT_NAME_CLR
@@ -398,11 +398,11 @@ function GeneratePageContent() {
       </div>
 
       <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
-        <aside className="
-          w-full shrink-0 overflow-y-auto border-b border-border bg-white px-3 py-3
-          md:w-80 md:border-b-0 md:border-r md:py-4
-          max-h-[45vh] md:max-h-none
-        ">
+    <aside className="
+  w-full shrink-0 overflow-y-auto border-b border-border bg-white px-3 py-3
+  md:w-1/3 md:border-b-0 md:border-r md:py-4
+  max-h-[45vh] md:max-h-none
+">
           {mode === "template" ? (
             <TemplateSidebarPanel
               // category props — updated

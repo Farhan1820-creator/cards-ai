@@ -11,12 +11,10 @@ import { PersonalizeTabContent } from "./components/PersonalizeTabContent";
 import { PhotoTabContent } from "./components/PhotoTabContent";
 
 interface TemplateSidebarPanelProps {
-  // category props — dynamic
   categories: Category[];
   isLoadingCategories: boolean;
   selectedCategoryId: string;
   onCategoryChange: (id: string) => void;
-  // rest same
   templates: Template[];
   isTempLoading: boolean;
   selectedTemplate: Template | null;
@@ -45,7 +43,18 @@ export function TemplateSidebarPanel({
 }: TemplateSidebarPanelProps) {
   const templateChosen = selectedTemplate !== null;
 
-  // filtering ab parent se ho rahi hai (API level) — yahan sirf templates as-is pass karo
+  // ── Progress calculation ─────────────────────────────────────
+  // 4 fields: template, recipientName, message, photo
+  // photo is optional so weight it less — template(35) + name(25) + message(25) + photo(15)
+  const progress = useMemo(() => {
+    let score = 0;
+    if (templateChosen)               score += 35;
+    if (recipientName.trim().length)  score += 25;
+    if (message.trim().length)        score += 25;
+    if (photoUrl)                     score += 15;
+    return score;
+  }, [templateChosen, recipientName, message, photoUrl]);
+
   const tabs = useMemo(
     () => [
       {
@@ -105,5 +114,5 @@ export function TemplateSidebarPanel({
     ]
   );
 
-  return <TabbedSidebarLayout tabs={tabs} />;
+  return <TabbedSidebarLayout tabs={tabs} progress={progress} />;
 }

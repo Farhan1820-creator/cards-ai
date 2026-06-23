@@ -155,7 +155,8 @@ export default function Navbar() {
 
           {/* Logo */}
           <Link href="/home" className="flex items-center gap-2">
-<div className={`h-10 w-10 rounded-lg flex items-center justify-center transition-colors duration-300 ${logoBgCls[mode]}`}>              <Image
+<div className={`h-10 w-10 rounded-lg flex items-center justify-center transition-colors duration-300 ${logoBgCls[mode]}`}>              
+                <Image
                 src="https://res.cloudinary.com/dggey8rb6/image/upload/v1781519413/download_e9qskl.png"
                 alt="Cards AI logo"
                 width={32}
