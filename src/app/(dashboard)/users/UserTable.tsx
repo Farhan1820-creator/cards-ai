@@ -69,7 +69,7 @@ export function UserTable({ users, deletingId, onDeleteClick }: UserTableProps) 
             placeholder="Search by name, email, ID..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-            className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-300 bg-slate-50 placeholder:text-slate-400"
+            className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/70 bg-slate-50 placeholder:text-slate-400"
           />
         </div>
       </div>
@@ -119,14 +119,13 @@ export function UserTable({ users, deletingId, onDeleteClick }: UserTableProps) 
                     {formatDate(user.createdAt)}
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <a
+                  <div className="flex items-center gap-1">                      <a
                         href={`/my-cards?user=${encodeURIComponent(user.email)}`}
-                        className="p-1.5 rounded-lg hover:bg-violet-50 text-slate-400 hover:text-violet-600 transition-colors"
+                        className="p-1.5 rounded-lg hover:bg-primary/10 text-slate-400 hover:text-primary transition-colors"
                         title="See Cards"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h10" />
+<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                         </svg>
                       </a>
                       <button
