@@ -93,33 +93,15 @@ export const authOptions: AuthOptions = {
     },
 
     // ✅ CLEAN JWT (NO DB CALLS)
-async jwt({ token, user, trigger }) {
-  if (user) {
-    token.id = user.id;
-    token.isAdmin = user.isAdmin ?? false;
-    token.isBanned = user.isBanned ?? false;
-  }
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.isAdmin = user.isAdmin ?? false;
+        token.isBanned = user.isBanned ?? false;
+      }
 
-  // Har JWT refresh pe DB se latest status check karo
-  // Sirf token issue hone pe (login pe) — middleware pe nahi
-  if (trigger === "signIn" || trigger === "update") {
-    const [dbUser] = await db
-      .select({ isAdmin: users.isAdmin, isBanned: users.isBanned })
-      .from(users)
-      .where(eq(users.id, token.id as string));
-
-    if (!dbUser) {
-      // User deleted hai — token invalid mark karo
-      token.isDeleted = true;
-    } else {
-      token.isAdmin = dbUser.isAdmin;
-      token.isBanned = dbUser.isBanned;
-      token.isDeleted = false;
-    }
-  }
-
-  return token;
-},
+      return token;
+    },
 
     // session mapping only
     async session({ session, token }) {

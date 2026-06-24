@@ -1,10 +1,20 @@
+import { db } from "@/db";
+import { deletedSessions } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { NextResponse, NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const callbackUrl = searchParams.get("callbackUrl") ?? "/";
 
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+
   const response = NextResponse.redirect(new URL(callbackUrl, req.url));
+
+  if (token?.sub) {
+    await db.delete(deletedSessions).where(eq(deletedSessions.userId, token.sub));
+  }
 
   const cookiesToClear = [
     "next-auth.session-token",
