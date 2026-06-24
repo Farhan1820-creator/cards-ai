@@ -29,13 +29,12 @@ export function DashboardChrome({ user, children }: DashboardChromeProps) {
   const isFullscreenRoute = FULLSCREEN_ROUTES.some((route) => pathname?.startsWith(route));
 
   const [isNavigating, setIsNavigating] = useState(false);
-  const currentUrlRef = useRef(`${pathname}?${searchParams.toString()}`);
+const currentUrlRef = useRef(pathname);
 
-  // URL actually badal gaya (naya page commit ho chuka) -> spinner hata do
-  useEffect(() => {
-    currentUrlRef.current = `${pathname}?${searchParams.toString()}`;
-    setIsNavigating(false);
-  }, [pathname, searchParams]);
+useEffect(() => {
+  currentUrlRef.current = pathname;
+  setIsNavigating(false);
+}, [pathname, searchParams]);
 
   // Kisi bhi internal link pr click hotay hi spinner turant on kar do
   useEffect(() => {
@@ -61,10 +60,20 @@ export function DashboardChrome({ user, children }: DashboardChromeProps) {
     document.addEventListener("click", handleClick);
     return () => document.removeEventListener("click", handleClick);
   }, []);
-
-  if (isFullscreenRoute) {
-    return <div className="h-screen overflow-hidden bg-background">{children}</div>;
-  }
+  
+if (isFullscreenRoute) {
+  return (
+    <div className="min-h-screen bg-background flex">
+      {/* Desktop pe sidebar dikhao, mobile/tablet pe hide */}
+      <div className="hidden md:block">
+        <DashboardSidebar user={user} />
+      </div>
+      <div className="h-screen overflow-hidden flex-1">
+        {children}
+      </div>
+    </div>
+  );
+}
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -79,7 +88,7 @@ export function DashboardChrome({ user, children }: DashboardChromeProps) {
               className="absolute inset-0 z-50 flex items-center justify-center bg-background/70 backdrop-blur-[2px]"
             >
               <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden="true" />
-              <span className="sr-only">Page load ho raha hai...</span>
+              <span className="sr-only">Page loading...</span>
             </div>
           )}
           {children}

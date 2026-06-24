@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { signIn, useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -37,42 +36,44 @@ export default function LoginPage() {
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   const { data: session, status } = useSession();
-  const router = useRouter();
 
 useEffect(() => {
+  // Sirf tab fire karo jab already authenticated ho aur loading nahi
+  // Yeh Google OAuth callback handle karta hai
   if (status !== "authenticated") return;
+  if (isLoading) return; // credentials flow chal raha hai — useEffect mat chale
   setIsRedirecting(true);
-  router.replace(session?.user?.isAdmin ? "/dashboard" : "/templates");
-}, [status, session, router]);
+  window.location.href = session?.user?.isAdmin ? "/dashboard" : "/templates";
+}, [status, session, isLoading]);
 
-  const handleEmailLogin = async () => {
-    if (!email || !password) {
-      toast.error("Email and password are required");
-      return;
-    }
+const handleEmailLogin = async () => {
+  if (!email || !password) {
+    toast.error("Email and password are required");
+    return;
+  }
 
-    setIsLoading(true);
+  setIsLoading(true);
 
-    const res = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
+  const res = await signIn("credentials", {
+    email,
+    password,
+    redirect: false,
+  });
 
-    if (res?.error) {
-      setIsLoading(false);
-      const errorMap: Record<string, string> = {
-        "Your account has been banned": "Your account has been suspended. Please contact support.",
-        "Invalid email or password": "Invalid email or password.",
-        "Missing credentials": "Please enter your email and password.",
-      };
-      toast.error(errorMap[res.error] ?? "Something went wrong. Please try again.");
-      return;
-    }
+  if (res?.error) {
+    setIsLoading(false);
+    const errorMap: Record<string, string> = {
+      "Your account has been banned": "Your account has been suspended. Please contact support.",
+      "Invalid email or password": "Invalid email or password.",
+      "Missing credentials": "Please enter your email and password.",
+    };
+    toast.error(errorMap[res.error] ?? "Something went wrong. Please try again.");
+    return;
+  }
 
-    // Toast mat dikhao — useEffect redirect karega, wahan dikhao
-    // isLoading true rehne do — spinner dikhta rahega jab tak redirect na ho
-  };
+  // Hard navigation — session fresh load hoga, koi race condition nahi
+  window.location.href = "/dashboard";
+};
 
   // Session load ho raha hai ya redirect ho raha hai — spinner dikhao
   if (status === "loading" || isRedirecting || isLoading) {

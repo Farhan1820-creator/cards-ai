@@ -1,3 +1,4 @@
+// lib/require-user.ts
 import { getAuthSession } from "./auth";
 import { redirect } from "next/navigation";
 
