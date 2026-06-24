@@ -1,8 +1,6 @@
 import Link from "next/link";
-import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 
-const heroBg = "https://res.cloudinary.com/dggey8rb6/image/upload/v1782116303/hero_swgtra.png";
 
 export default function HeroSection() {
   return (

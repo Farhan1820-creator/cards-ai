@@ -39,11 +39,11 @@ export default function LoginPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  useEffect(() => {
-    if (status !== "authenticated") return;
-    setIsRedirecting(true);
-    router.replace(session?.user?.isAdmin ? "/dashboard" : "/templates");
-  }, [status, session, router]);
+useEffect(() => {
+  if (status !== "authenticated") return;
+  setIsRedirecting(true);
+  router.replace(session?.user?.isAdmin ? "/dashboard" : "/templates");
+}, [status, session, router]);
 
   const handleEmailLogin = async () => {
     if (!email || !password) {
