@@ -93,14 +93,15 @@ export const authOptions: AuthOptions = {
     },
 
     // ✅ CLEAN JWT (NO DB CALLS)
-async jwt({ token, user }) {
-  if (user) {
-    token.id = user.id;
-    token.isAdmin = user.isAdmin ?? false;  
-    token.isBanned = user.isBanned ?? false;
-  }
-  return token;
-}
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.isAdmin = user.isAdmin ?? false;
+        token.isBanned = user.isBanned ?? false;
+      }
+
+      return token;
+    },
 
     // session mapping only
     async session({ session, token }) {
