@@ -21,10 +21,6 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const deletedSessions = pgTable("deleted_sessions", {
-  userId: text("user_id").primaryKey(),
-  deletedAt: timestamp("deleted_at").defaultNow(),
-});
 
 export const templates = pgTable("templates", {
   id: text("id").primaryKey(),

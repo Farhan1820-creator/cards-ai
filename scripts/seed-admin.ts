@@ -8,7 +8,7 @@ import { db } from "@/db";
 
 const ADMIN_EMAIL    = process.env.ADMIN_EMAIL!;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD!;
-const ADMIN_NAME     = process.env.ADMIN_NAME ?? "Super Admin";
+const ADMIN_NAME     = process.env.ADMIN_NAME ?? "Admin";
 
 if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
   console.error("❌ Pleas set the ADMIN_EMAIL and ADMIN_PASSWORD in .env.local");

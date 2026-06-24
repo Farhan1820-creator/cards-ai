@@ -16,14 +16,14 @@ export default async function DashboardPage() {
 
   const adminQueries = user.isAdmin
     ? [
-        db.select({ count: sql<number>`count(*)` }).from(cards),
-        db.select({ count: sql<number>`count(*)` }).from(users).where(eq(users.isAdmin, false)),
-        db.select({ name: users.name, email: users.email, image: users.image, createdAt: users.createdAt })
-          .from(users)
-          .where(eq(users.isAdmin, false))
-          .orderBy(desc(users.createdAt))
-          .limit(3),
-      ] as const
+      db.select({ count: sql<number>`count(*)` }).from(cards),
+      db.select({ count: sql<number>`count(*)` }).from(users).where(eq(users.isAdmin, false)),
+      db.select({ name: users.name, email: users.email, image: users.image, createdAt: users.createdAt })
+        .from(users)
+        .where(eq(users.isAdmin, false))
+        .orderBy(desc(users.createdAt))
+        .limit(3),
+    ] as const
     : [];
 
   const [
@@ -35,18 +35,18 @@ export default async function DashboardPage() {
 
   // ── Format cards ──────────────────────────────────────────
   const formattedCards = recentCards.map((card) => ({
-    id:            card.id,
-    imageUrl:      card.imageUrl,
+    id: card.id,
+    imageUrl: card.imageUrl,
     recipientName: card.recipientName ?? "",
-    prompt:        card.prompt ?? "",
-    templateId:    card.templateId ?? "",
-    nameColor:     card.nameColor ?? "#ffffff",
-    messageColor:  card.messageColor ?? "#ffffff",
-    photoUrl:      card.photoUrl ?? "",
-    createdAt:     card.createdAt
+    prompt: card.prompt ?? "",
+    templateId: card.templateId ?? "",
+    nameColor: card.nameColor ?? "#ffffff",
+    messageColor: card.messageColor ?? "#ffffff",
+    photoUrl: card.photoUrl ?? "",
+    createdAt: card.createdAt
       ? new Date(card.createdAt).toLocaleDateString("en-US", {
-          month: "short", day: "numeric", year: "numeric",
-        })
+        month: "short", day: "numeric", year: "numeric",
+      })
       : "",
   }));
 
@@ -60,13 +60,13 @@ export default async function DashboardPage() {
     ];
 
     adminData = {
-      totalCards:     Number(totalCardCount.count),
-      totalUsers:     Number(totalUserCount.count),
+      totalCards: Number(totalCardCount.count),
+      totalUsers: Number(totalUserCount.count),
       totalTemplates: Number(templateCount.count),
-      recentUsers:    recentUsers.map((u) => ({
-        name:      u.name ?? u.email.split("@")[0],
-        email:     u.email,
-        image:     u.image ?? null,
+      recentUsers: recentUsers.map((u) => ({
+        name: u.name ?? u.email.split("@")[0],
+        email: u.email,
+        image: u.image ?? null,
         createdAt: u.createdAt ? u.createdAt.toISOString() : "",
       })),
     };

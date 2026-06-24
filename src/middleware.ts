@@ -1,33 +1,24 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
-import { db } from "@/db";
-import { deletedSessions } from "@/db/schema";
-import { eq } from "drizzle-orm";
 
 export default withAuth(
-  async function middleware(req) {
+  function middleware(req) {
     const token = req.nextauth.token;
     const pathname = req.nextUrl.pathname;
 
+    // Deleted user — cookies clear karke logout
+    if (token?.isDeleted) {
+      const signOutUrl = new URL("/api/auth/force-signout", req.url);
+      signOutUrl.searchParams.set("callbackUrl", "/");
+      return NextResponse.redirect(signOutUrl);
+    }
+
+    // Banned user
     if (token?.isBanned) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
 
- // middleware.ts
-if (token?.id) {
-  const [blocked] = await db
-    .select({ userId: deletedSessions.userId })
-    .from(deletedSessions)
-    .where(eq(deletedSessions.userId, token.id as string));
-
-  if (blocked) {
-    // signout URL pe redirect — NextAuth cookie clear kar dega
-    const signOutUrl = new URL("/api/auth/force-signout", req.url);
-    signOutUrl.searchParams.set("callbackUrl", "/");
-    return NextResponse.redirect(signOutUrl);
-  }
-}
-
+    // Admin only routes
     const adminOnlyRoutes = ["/users"];
     if (
       adminOnlyRoutes.some((r) => pathname.startsWith(r)) &&

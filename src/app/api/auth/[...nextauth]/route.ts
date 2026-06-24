@@ -2,7 +2,6 @@ import NextAuth, { type AuthOptions } from "next-auth";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
-
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -20,7 +19,6 @@ export const authOptions: AuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-
       async authorize(credentials) {
         if (!credentials?.email || !credentials.password) {
           throw new Error("Missing credentials");
@@ -39,11 +37,7 @@ export const authOptions: AuthOptions = {
           throw new Error("Your account has been banned");
         }
 
-        const isValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
-
+        const isValid = await bcrypt.compare(credentials.password, user.password);
         if (!isValid) {
           throw new Error("Invalid email or password");
         }
@@ -60,15 +54,12 @@ export const authOptions: AuthOptions = {
     }),
   ],
 
-  session: {
-    strategy: "jwt",
-  },
+  session: { strategy: "jwt" },
 
   callbacks: {
     async signIn({ user, account }) {
       if (!user.email) return false;
 
-      // Google signup handling
       if (account?.provider !== "credentials") {
         const [existingUser] = await db
           .select()
@@ -92,31 +83,50 @@ export const authOptions: AuthOptions = {
       return true;
     },
 
-    // ✅ CLEAN JWT (NO DB CALLS)
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
+      // Pehli baar login — user object available hota hai
       if (user) {
         token.id = user.id;
         token.isAdmin = user.isAdmin ?? false;
         token.isBanned = user.isBanned ?? false;
+        token.isDeleted = false;
+      }
+
+      // Har signIn pe DB se latest status fetch karo
+      // Credentials aur Google dono ke liye kaam karega
+      if (trigger === "signIn") {
+        const [dbUser] = await db
+          .select({
+            isAdmin: users.isAdmin,
+            isBanned: users.isBanned,
+          })
+          .from(users)
+          .where(eq(users.id, token.id));
+
+        if (!dbUser) {
+          // User DB mein exist nahi — deleted hai
+          token.isDeleted = true;
+        } else {
+          token.isAdmin = dbUser.isAdmin;
+          token.isBanned = dbUser.isBanned;
+          token.isDeleted = false;
+        }
       }
 
       return token;
     },
 
-    // session mapping only
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id as string;
-        session.user.isAdmin = token.isAdmin as boolean;
-        session.user.isBanned = token.isBanned as boolean;
+        session.user.id = token.id;
+        session.user.isAdmin = token.isAdmin;
+        session.user.isBanned = token.isBanned;
       }
       return session;
     },
   },
 
-  pages: {
-    signIn: "/login",
-  },
+  pages: { signIn: "/login" },
 };
 
 const handler = NextAuth(authOptions);

@@ -1,4 +1,3 @@
-// types/next-auth.d.ts
 import { DefaultSession, DefaultJWT } from "next-auth";
 
 declare module "next-auth" {
@@ -18,7 +17,9 @@ declare module "next-auth" {
 
 declare module "next-auth/jwt" {
   interface JWT extends DefaultJWT {
+    id: string;
     isAdmin: boolean;
     isBanned: boolean;
+    isDeleted?: boolean;
   }
 }
