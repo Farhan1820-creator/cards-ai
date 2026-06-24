@@ -6,19 +6,16 @@ export default withAuth(
     const token = req.nextauth.token;
     const pathname = req.nextUrl.pathname;
 
-    // Deleted user
     if (token?.isDeleted) {
       const signOutUrl = new URL("/api/auth/force-signout", req.url);
       signOutUrl.searchParams.set("callbackUrl", "/");
       return NextResponse.redirect(signOutUrl);
     }
 
-    // Banned user
     if (token?.isBanned) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
 
-    // Admin only routes
     const adminOnlyRoutes = ["/users"];
     if (
       adminOnlyRoutes.some((r) => pathname.startsWith(r)) &&
