@@ -1,4 +1,3 @@
-// src/components/NavigationProgress.tsx
 "use client";
 
 import { usePathname } from "next/navigation";
@@ -6,18 +5,22 @@ import { useEffect, useRef, useState } from "react";
 
 export function NavigationProgress() {
   const pathname = usePathname();
-  const [isPending, setIsPending] = useState(false);
+  const [state, setState] = useState<"idle" | "loading" | "completing">("idle");
   const prevPathname = useRef(pathname);
 
-  // route change complete ho gaya → bar hide
+  // Route change complete → completing state
   useEffect(() => {
     if (prevPathname.current !== pathname) {
-      setIsPending(false);
+      setState("completing");
       prevPathname.current = pathname;
+
+      // Completing ke baad hide
+      const t = setTimeout(() => setState("idle"), 400);
+      return () => clearTimeout(t);
     }
   }, [pathname]);
 
-  // document-level click listener — kisi bhi internal <a> click ko detect karega
+  // Click listener
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       const anchor = (e.target as HTMLElement)?.closest("a");
@@ -28,26 +31,31 @@ export function NavigationProgress() {
       if (anchor.target === "_blank") return;
 
       const url = new URL(href, window.location.origin);
-      if (url.pathname === pathname) return; // same page, navigation nahi hoga
+      if (url.pathname === pathname) return;
 
-      setIsPending(true);
+      setState("loading");
     }
+
     document.addEventListener("click", handleClick);
     return () => document.removeEventListener("click", handleClick);
   }, [pathname]);
 
-  // safety timeout — kabhi pathname change na ho to stuck na rahe
+  // Safety timeout
   useEffect(() => {
-    if (!isPending) return;
-    const t = setTimeout(() => setIsPending(false), 8000);
+    if (state !== "loading") return;
+    const t = setTimeout(() => setState("completing"), 8000);
     return () => clearTimeout(t);
-  }, [isPending]);
+  }, [state]);
 
-  if (!isPending) return null;
+  if (state === "idle") return null;
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-[200] h-[3px] overflow-hidden bg-transparent">
-      <div className="h-full w-full bg-gradient-to-r from-purple-600 to-pink-500 animate-pulse" />
+    <div className="fixed top-0 left-0 right-0 z-[200] h-[3px]">
+      <div
+        className={`h-full bg-primary transition-all ease-in-out ${
+        state === "loading" ? "w-[75%] duration-[3000ms]" : "w-full duration-300"
+        }`}
+      />
     </div>
   );
 }

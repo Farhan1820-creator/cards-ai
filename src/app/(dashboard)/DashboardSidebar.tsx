@@ -85,7 +85,7 @@ function UserPopover({ user, onClose }: { user: SidebarUser; onClose: () => void
         </div>
         <div className="border-t border-border my-2" />
         <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
+          onClick={() => signOut({ callbackUrl: "/" })}
           className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
         >
           <LogOut className="h-4 w-4" />

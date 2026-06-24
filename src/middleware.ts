@@ -23,7 +23,7 @@ if (token?.id) {
   if (blocked) {
     // signout URL pe redirect — NextAuth cookie clear kar dega
     const signOutUrl = new URL("/api/auth/signout", req.url);
-    signOutUrl.searchParams.set("callbackUrl", "/login");
+    signOutUrl.searchParams.set("callbackUrl", "/");
     return NextResponse.redirect(signOutUrl);
   }
 }

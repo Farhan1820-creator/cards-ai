@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 
 const GoogleIcon = () => (
   <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -20,26 +21,29 @@ const GoogleIcon = () => (
   </svg>
 );
 
+// Full page spinner — loading aur redirect dono ke liye
+function FullPageSpinner() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
+}
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  // ✅ FIXED ROLE-BASED REDIRECT (CLEAN + SAFE)
-useEffect(() => {
-  if (status !== "authenticated") return;
-
-  const isAdmin = session?.user?.isAdmin;
-
-  if (isAdmin) {
-    router.replace("/dashboard");
-  } else {
-    router.replace("/templates");
-  }
-}, [status, session, router]);
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    setIsRedirecting(true);
+    router.replace(session?.user?.isAdmin ? "/dashboard" : "/templates");
+  }, [status, session, router]);
 
   const handleEmailLogin = async () => {
     if (!email || !password) {
@@ -55,29 +59,24 @@ useEffect(() => {
       redirect: false,
     });
 
-    setIsLoading(false);
-
     if (res?.error) {
+      setIsLoading(false);
       const errorMap: Record<string, string> = {
-        "Your account has been banned":
-          "Your account has been suspended. Please contact support.",
+        "Your account has been banned": "Your account has been suspended. Please contact support.",
         "Invalid email or password": "Invalid email or password.",
         "Missing credentials": "Please enter your email and password.",
       };
-
       toast.error(errorMap[res.error] ?? "Something went wrong. Please try again.");
       return;
     }
 
-    toast.success("Welcome back!");
+    // Toast mat dikhao — useEffect redirect karega, wahan dikhao
+    // isLoading true rehne do — spinner dikhta rahega jab tak redirect na ho
   };
 
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        Loading...
-      </div>
-    );
+  // Session load ho raha hai ya redirect ho raha hai — spinner dikhao
+  if (status === "loading" || isRedirecting || isLoading) {
+    return <FullPageSpinner />;
   }
 
   return (
@@ -92,30 +91,24 @@ useEffect(() => {
             </p>
           </div>
 
-          {/* Google */}
           <Button
             variant="outline"
             className="mb-6 h-12 w-full gap-3 text-base"
             onClick={() => signIn("google", { callbackUrl: "/templates" })}
-            disabled={isLoading}
           >
             <GoogleIcon />
             Continue with Google
           </Button>
 
-          {/* Divider */}
           <div className="relative mb-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-3 text-muted-foreground">
-                OR
-              </span>
+              <span className="bg-card px-3 text-muted-foreground">OR</span>
             </div>
           </div>
 
-          {/* Email */}
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Email</Label>
@@ -144,11 +137,10 @@ useEffect(() => {
               onClick={handleEmailLogin}
               disabled={isLoading}
             >
-              {isLoading ? "Logging in..." : "Log in with email"}
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Log in with email"}
             </Button>
           </div>
 
-          {/* Footer */}
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Don&apos;t have an account?{" "}
             <Link href="/signup" className="font-medium text-primary hover:underline">

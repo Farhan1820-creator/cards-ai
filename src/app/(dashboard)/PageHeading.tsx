@@ -22,7 +22,7 @@ export function PageHeading({ title, className }: PageHeadingProps) {
       </h1>
 
       <Link
-        href="/home"
+        href="/"
         className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
       >
         {/* Mobile/Tablet: icon only */}
