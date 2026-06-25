@@ -19,43 +19,30 @@ export function useTemplates() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
-  // Categories sirf ek baar fetch hon — list rarely change hoti hai per-session.
-  // Route ab seedha [{id, name}][] array return karta hai, koi wrapper nahi.
-  useEffect(() => {
-    fetch("/api/user/categories")
-      .then((res) => res.json())
-      .then((rows: { id: string; name: string }[]) => {
-        setCategories([ALL_OPTION, ...rows]);
-      })
-      .catch(() => {
-        // fail silently — "all" filter still works even agar yeh fetch fail ho
-      });
-  }, []);
 
-  const fetchTemplates = useCallback(async () => {
+// hooks/useTemplates.tsx — replace the two separate useEffects with one:
+
+useEffect(() => {
+  async function loadAll() {
     setIsLoading(true);
-    setError(null);
     try {
-      const url =
-        category === "all"
-          ? "/api/user/templates"
-          : `/api/user/templates?categoryId=${category}`;
-
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Failed to fetch templates");
-      const data: Template[] = await res.json();
-      setAllTemplates(data);
-      setPage(1); // reset page on new category
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      const [catRes, tplRes] = await Promise.all([
+        fetch("/api/user/categories"),
+        fetch(category === "all" ? "/api/user/templates" : `/api/user/templates?categoryId=${category}`),
+      ]);
+      const [cats, templates] = await Promise.all([catRes.json(), tplRes.json()]);
+      setCategories([ALL_OPTION, ...cats]);
+      setAllTemplates(templates);
+    } catch {
+      setError("Failed to load templates");
     } finally {
       setIsLoading(false);
     }
-  }, [category]);
+  }
+  loadAll();
+}, [category]); // ✅ single effect, parallel fetches
 
-  useEffect(() => {
-    fetchTemplates();
-  }, [fetchTemplates]);
+
 
   // Client-side search
   const filtered = useMemo(() => {

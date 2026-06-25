@@ -18,7 +18,11 @@ export async function GET(request: Request) {
       overlayConfig: t.overlayConfig ?? undefined,
     }));
 
-    return NextResponse.json(templates);
+return NextResponse.json(templates, {
+  headers: {
+    "Cache-Control": "public, s-maxage=60, stale-while-revalidate=30",
+  },
+});
   } catch {
     return NextResponse.json(
       { error: "Failed to fetch templates" },
