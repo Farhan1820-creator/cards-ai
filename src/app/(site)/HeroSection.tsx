@@ -4,7 +4,7 @@ import { ArrowUpRight } from "lucide-react";
 
 export default function HeroSection() {
   return (
-    <section className="relative w-full bg-[url(/hero_swgtra.png)] bg-cover sm:bg-center md:min-h-screen h-[550px]">
+    <section className="relative w-full bg-[url(/hero_swgtra.webp)] bg-cover sm:bg-center md:min-h-screen h-[550px]">
       {/* Background Image */}
       {/* <Image
         src={heroBg}
@@ -49,7 +49,7 @@ export default function HeroSection() {
           </Link>
           <Link
             href="/templates"
-            className="inline-flex items-center gap-2 bg-white text-primary backdrop-blur-sm border border-primary/25  px-7 py-3.5 rounded-full text-sm font-medium hover:bg-white/70 transition-all w-fit"
+            className="inline-flex items-center gap-2 bg-white text-primary backdrop-blur-sm border border-primary/30  px-7 py-3.5 rounded-full text-sm font-medium hover:bg-white/80 transition-all w-fit"
           >
             View Templates
             <ArrowUpRight className="w-4 h-4 opacity-60" />
