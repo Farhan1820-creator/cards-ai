@@ -3,6 +3,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { OverlayConfigurator, DEFAULT_OVERLAY_CONFIG, type OverlayConfig } from "./OverlayConfigurator";
 import { toast } from "sonner";
+import { useScrollLock } from "./hooks/useScrollLock";
+
 
 export interface CategoryDef { id: string; label: string; }
 // ⚠️ icon field hata diya hai — agar kahin aur CategoryDef.icon use ho raha
@@ -54,6 +56,7 @@ function getCategoryColor(index: number) {
 type Tab = "template" | "category";
 
 export function AdminTemplateDialog({ open, onClose, onSave, editing }: Props) {
+  useScrollLock(open); 
   const fileRef    = useRef<HTMLInputElement>(null);
   const catNameRef = useRef<HTMLInputElement>(null);
 
@@ -229,12 +232,13 @@ async function handleSubmit() {
       setCatDeletingId(null);
     }
   }
+  
 
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"/>
       <div className="relative z-10 w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
 
         {/* Header */}
