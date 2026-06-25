@@ -1,9 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
+import Image from "next/image";
+import { ArrowRight } from "lucide-react";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 const projects = [
   {
@@ -29,50 +35,13 @@ const projects = [
 ];
 
 export default function TemplatesSection() {
-  const [current, setCurrent] = useState(0);
-  const [fading, setFading] = useState(false);
-
-  const goTo = (index: number) => {
-    if (fading || index === current) return;
-    setFading(true);
-    setTimeout(() => {
-      setCurrent(index);
-      setFading(false);
-    }, 180);
-  };
-
-  const prev = () => goTo(current === 0 ? projects.length - 1 : current - 1);
-  const next = () => goTo((current + 1) % projects.length);
-
   return (
-    <section className="w-full py-20 flex flex-col justify-center items-center">
+    <section className="w-full py-20">
       <div className="width-padding mx-auto">
-        <div className="flex flex-col lg:flex-row gap-12 lg:gap-20 items-center">
-
-          {/* ── Portrait Card ── */}
-          <div className="w-full lg:w-auto flex justify-center shrink-0">
-            <div className="relative w-[280px] sm:w-[320px]">
-
-              {/* main card */}
-              <div className="relative rounded-2xl overflow-hidden border border-gray-100 shadow-sm aspect-[3/4] bg-gray-50">
-                <Image
-                  src={projects[current].src}
-                  alt={projects[current].category}
-                  fill
-                  className={`object-cover transition-opacity duration-180 ${fading ? "opacity-0" : "opacity-100"}`}
-                  sizes="320px"
-                  priority
-                />
-                {/* category pill */}
-                <span className={`absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-primary text-[10px] font-bold tracking-widest uppercase px-3 py-1.5 rounded-lg transition-opacity duration-180 ${fading ? "opacity-0" : "opacity-100"}`}>
-                  {projects[current].category}
-                </span>
-              </div>
-            </div>
-          </div>
+        <div className="flex flex-col lg:flex-row gap-12 lg:gap-20 items-center justify-center">
 
           {/* ── Text + Controls ── */}
-          <div className="flex flex-col items-center lg:items-start text-center lg:text-start">
+          <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start text-center lg:text-start">
             <p className="text-[10px] font-bold tracking-widest uppercase text-black/55 mb-4">
               Templates
             </p>
@@ -81,56 +50,56 @@ export default function TemplatesSection() {
               <br />
               <span className="text-primary">occasion.</span>
             </h2>
-            <p className="text-sm text-gray-500 leading-relaxed mb-8 max-w-sm">
+            <p className="text-sm text-gray-500 leading-relaxed mb-8 ">
               Professionally designed greeting cards — weddings, birthdays,
               Eid, holidays and more. Pick one, personalise it, share in seconds.
             </p>
 
             <Link
               href="/templates"
-              className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-xl text-sm font-bold hover:opacity-90 transition-opacity mb-10"
+              className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-xl text-sm font-bold hover:opacity-90 transition-opacity"
             >
               Browse all templates <ArrowRight className="w-4 h-4" />
             </Link>
-
-            {/* Nav controls */}
-            <div className="flex items-center gap-4">
-              <button
-                onClick={prev}
-                className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 hover:border-primary/40 hover:text-primary transition-all"
-                aria-label="Previous"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-
-              {/* dots */}
-              {/* <div className="flex items-center gap-1.5">
-                {projects.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => goTo(i)}
-                    className={`h-1.5 rounded-full transition-all duration-300 ${
-                      i === current ? "bg-primary w-5" : "bg-gray-200 hover:bg-gray-300 w-1.5"
-                    }`}
-                    aria-label={`Slide ${i + 1}`}
-                  />
-                ))}
-              </div> */}
-
-              <button
-                onClick={next}
-                className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 hover:border-primary/40 hover:text-primary transition-all"
-                aria-label="Next"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* counter */}
-            {/* <p className="mt-3 text-xs text-gray-400 tabular-nums">
-              {String(current + 1).padStart(2, "0")} / {String(projects.length).padStart(2, "0")}
-            </p> */}
           </div>
+
+
+
+
+   {/* ── Carousel ── */}
+<div className="w-full lg:w-1/2 flex justify-center">
+  <Carousel className="w-full max-w-[250px] lg:max-w-[320px]">
+    <CarouselContent>
+      {projects.map((project, index) => (
+        <CarouselItem key={index} className="basis-full">
+          <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden shadow-lg">
+            <Image
+              src={project.src}
+              alt={project.category}
+              fill
+              className="object-cover"
+            />
+            <div className="absolute bottom-3 left-3">
+              <span className="text-[10px] font-bold tracking-widest uppercase bg-white/80 text-black/60 px-2 py-1 rounded-full">
+                {project.category}
+              </span>
+            </div>
+          </div>
+        </CarouselItem>
+      ))}
+    </CarouselContent>
+
+    {/* Mobile: buttons neeche center mein */}
+    <div className="flex justify-center gap-3 mt-4 lg:hidden">
+      <CarouselPrevious className="static translate-x-0 translate-y-0" />
+      <CarouselNext className="static translate-x-0 translate-y-0" />
+    </div>
+
+    {/* Desktop: buttons image ke left/right */}
+    <CarouselPrevious className="hidden lg:flex -left-12 top-1/2 -translate-y-1/2" />
+    <CarouselNext className="hidden lg:flex -right-12 top-1/2 -translate-y-1/2" />
+  </Carousel>
+</div>
 
         </div>
       </div>

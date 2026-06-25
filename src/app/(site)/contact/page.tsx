@@ -145,7 +145,7 @@ export default function ContactPage() {
           </h2>
         </div>
 
-        <div className="max-w-2xl mx-auto divide-y divide-gray-100 border border-gray-100 rounded-2xl overflow-hidden">
+        <div className="width-padding mx-auto divide-y divide-gray-100 border border-gray-100 rounded-2xl overflow-hidden">
           {faqs.map((faq) => (
             <FaqItem key={faq.q} q={faq.q} a={faq.a} />
           ))}

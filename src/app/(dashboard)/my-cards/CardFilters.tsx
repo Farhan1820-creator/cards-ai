@@ -1,7 +1,7 @@
 "use client";
 
-import { Search, X, SlidersHorizontal, ChevronDown } from "lucide-react";
-import { useState } from "react";
+import { Search, X, SlidersHorizontal, ChevronDown, Calendar } from "lucide-react";
+import { useState, useRef } from "react";
 
 export interface CardFilters {
   search: string;
@@ -16,6 +16,57 @@ interface CardFiltersProps {
   onChange: (filters: CardFilters) => void;
   isAdmin?: boolean;
   userOptions?: { email: string; name: string }[];
+  categoryOptions?: { name: string; slug: string }[];
+}
+
+// Custom date input with placeholder support
+function DateInput({
+  value,
+  onChange,
+  placeholder,
+  min,
+  max,
+  hasError,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  min?: string;
+  max?: string;
+  hasError: boolean;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const isEmpty = !value;
+
+  return (
+<div
+  className={`relative h-9 flex items-center rounded-xl border bg-white transition-colors cursor-pointer min-w-[120px] ${
+    hasError
+      ? "border-red-400 focus-within:ring-2 focus-within:ring-red-300"
+      : "border-border focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary"
+  }`}
+  onClick={() => inputRef.current?.showPicker?.()}
+>
+      {/* Placeholder overlay — only when empty */}
+      {isEmpty && (
+        <div className="absolute inset-0 flex items-center gap-1.5 px-3 pointer-events-none">
+          <Calendar className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+          <span className="text-sm text-muted-foreground truncate">{placeholder}</span>
+        </div>
+      )}
+      <input
+        ref={inputRef}
+        type="date"
+        value={value}
+        min={min}
+        max={max}
+        onChange={(e) => onChange(e.target.value)}
+        className={`h-full w-full px-3 text-sm bg-transparent focus:outline-none rounded-xl ${
+          isEmpty ? "opacity-0" : "opacity-100"
+        }`}
+      />
+    </div>
+  );
 }
 
 export function CardFilters({
@@ -23,14 +74,15 @@ export function CardFilters({
   onChange,
   isAdmin = false,
   userOptions = [],
+  categoryOptions = [],
 }: CardFiltersProps) {
-  const [dateError, setDateError]   = useState<string | null>(null);
+  const [dateError, setDateError] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   function update(key: keyof CardFilters, value: string) {
     const updated = { ...filters, [key]: value };
     const from = key === "dateFrom" ? value : updated.dateFrom;
-    const to   = key === "dateTo"   ? value : updated.dateTo;
+    const to = key === "dateTo" ? value : updated.dateTo;
     if (from && to && from > to) {
       setDateError("Start date cannot be after end date");
       return;
@@ -53,21 +105,13 @@ export function CardFilters({
 
   const hasActive = Object.values(filters).some(Boolean);
 
-  // ── Shared input classes ──────────────────────────────────────
   const selectCls =
     "h-9 text-sm rounded-xl border border-border bg-white px-3 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors cursor-pointer";
 
-  const dateCls = (err: boolean) =>
-    `h-9 text-sm rounded-xl border px-3 bg-white focus:outline-none focus:ring-2 transition-colors ${
-      err
-        ? "border-red-400 focus:ring-red-300"
-        : "border-border focus:ring-primary/30 focus:border-primary"
-    }`;
-
   return (
-    <div className="flex flex-col items-center gap-3 mb-6 w-full">
+    <div className="flex flex-col items-center gap-3 mb-8 sm:mb-15 w-full">
 
-      {/* ── Row 1: Search + mobile filter toggle ── */}
+      {/* Row 1: Search + mobile toggle */}
       <div className="flex items-center gap-2 w-full max-w-lg">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
@@ -80,13 +124,12 @@ export function CardFilters({
           />
         </div>
 
-        {/* Mobile: Filters toggle button */}
         <button
           onClick={() => setFiltersOpen((v) => !v)}
           className={`sm:hidden flex items-center gap-1.5 h-9 px-3 rounded-xl border text-sm font-medium transition-colors ${
             filtersOpen || activeFilterCount > 0
               ? "bg-primary text-primary-foreground border-primary"
-              : "bg-primary text-white border-border text-muted-foreground hover:text-foreground"
+              : "bg-primary-foreground text-muted-foreground border-border"
           }`}
         >
           <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -101,7 +144,6 @@ export function CardFilters({
           />
         </button>
 
-        {/* Mobile: Clear when active */}
         {hasActive && (
           <button
             onClick={reset}
@@ -113,7 +155,7 @@ export function CardFilters({
         )}
       </div>
 
-      {/* ── Row 2: Filters — always visible on sm+, collapsible on mobile ── */}
+      {/* Row 2: Filters */}
       <div
         className={`w-full flex justify-center overflow-hidden transition-all duration-300 ease-in-out ${
           filtersOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0 sm:max-h-96 sm:opacity-100"
@@ -121,19 +163,18 @@ export function CardFilters({
       >
         <div className="flex flex-wrap justify-center gap-2 pt-1 pb-0.5 px-1">
 
-          {/* Card Type */}
+          {/* Dynamic categories */}
           <select
             value={filters.categoryName}
             onChange={(e) => update("categoryName", e.target.value)}
             className={selectCls}
           >
             <option value="">All Categories</option>
-            <option value="birthday">Birthday</option>
-            <option value="wedding">Wedding</option>
-            <option value="anniversary">Anniversary</option>
-            <option value="graduation">Graduation</option>
-            <option value="eid">Eid</option>
-            <option value="christmas">Christmas</option>
+            {categoryOptions.map((cat) => (
+              <option key={cat.slug} value={cat.name}>
+                {cat.name}
+              </option>
+            ))}
           </select>
 
           {/* User filter — admin only */}
@@ -146,31 +187,30 @@ export function CardFilters({
               <option value="">All Users</option>
               {userOptions.map((u) => (
                 <option key={u.email} value={u.email}>
-                  {u.name && u.email}
+                  {u.name || u.email}
                 </option>
               ))}
             </select>
           )}
 
           {/* Date From */}
-          <input
-            type="date"
+          <DateInput
             value={filters.dateFrom}
+            onChange={(v) => update("dateFrom", v)}
+            placeholder="From date"
             max={filters.dateTo || undefined}
-            onChange={(e) => update("dateFrom", e.target.value)}
-            className={dateCls(!!dateError)}
+            hasError={!!dateError}
           />
 
           {/* Date To */}
-          <input
-            type="date"
+          <DateInput
             value={filters.dateTo}
+            onChange={(v) => update("dateTo", v)}
+            placeholder="To date"
             min={filters.dateFrom || undefined}
-            onChange={(e) => update("dateTo", e.target.value)}
-            className={dateCls(!!dateError)}
+            hasError={!!dateError}
           />
 
-          {/* Clear — desktop only (mobile has the X button in row 1) */}
           {(hasActive || dateError) && (
             <button
               onClick={reset}
@@ -183,7 +223,6 @@ export function CardFilters({
         </div>
       </div>
 
-      {/* Date error */}
       {dateError && (
         <p className="text-xs text-red-500">{dateError}</p>
       )}

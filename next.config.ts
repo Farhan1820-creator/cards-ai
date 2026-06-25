@@ -25,7 +25,10 @@ const nextConfig: NextConfig = {
       hostname: "encrypted-tbn0.gstatic.com",
     },
     ],
-  }
+  },
+  allowedDevOrigins:[
+    "192.168.0.121"
+  ]
 };
 
 export default nextConfig;

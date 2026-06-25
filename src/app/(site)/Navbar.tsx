@@ -8,9 +8,9 @@ import { BlocksIcon, LogOut, ChevronDown, ArrowUpRight } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 
-const HERO_ROUTES = ['/', '/home']; 
+const HERO_ROUTES = ['/']; 
 const navLinks = [
-  { href: '/home', label: 'Home' },
+  { href: '/', label: 'Home' },
   { href: '/about', label: 'About' },
   { href: '/features', label: 'Features' },
   { href: '/contact', label: 'Contact' },
@@ -154,7 +154,7 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
 
           {/* Logo */}
-          <Link href="/home" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
 <div className={`h-10 w-10 rounded-lg flex items-center justify-center transition-colors duration-300 ${logoBgCls[mode]}`}>              
                 <Image
                 src="https://res.cloudinary.com/dggey8rb6/image/upload/v1781519413/download_e9qskl.png"

@@ -4,6 +4,8 @@ import { useState } from "react";
 import Image from "next/image";
 import { User, formatDate } from "./UsersClient";
 import { verifiedAction as runVerifiedAction } from "@/lib/actions/verifiedAction";
+import Link from "next/link";
+
 
 function Avatar({ user, size = "md" }: { user: User; size?: "sm" | "md" | "lg" }) {
   const sizes = { sm: "w-8 h-8 text-xs", md: "w-10 h-10 text-sm", lg: "w-12 h-12 text-base" };
@@ -137,15 +139,16 @@ export function UserTable({ users, deletingId, onDeleteClick }: UserTableProps) 
                   {/* Actions */}
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-1">
-                      <a
-                        href={`/my-cards?user=${encodeURIComponent(user.email)}`}
-                        className="p-1.5 rounded-lg hover:bg-primary/10 text-slate-400 hover:text-primary transition-colors"
-                        title="See Cards"
-                      >
+                   <Link
+  href={`/my-cards?user=${encodeURIComponent(user.email)}`}
+  prefetch={true}
+  className="p-1.5 rounded-lg hover:bg-primary/10 text-slate-400 hover:text-primary transition-colors"
+  title="See Cards"
+>
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                         </svg>
-                      </a>
+                        </Link>
                       <button
                         onClick={() => runVerifiedAction(async () => onDeleteClick(user))}
                         disabled={deletingId === user.dbId}

@@ -19,9 +19,10 @@ interface MyCardsClientProps {
   isAdmin?: boolean;
   currentUserEmail?: string;
   initialUser?: string;
+  categoryOptions: { name: string; slug: string }[];
 }
 
-export function MyCardsClient({ cards: initialCards, isAdmin = false, currentUserEmail = "", initialUser = "" }: MyCardsClientProps) {
+export function MyCardsClient({ cards: initialCards, isAdmin = false, currentUserEmail = "", initialUser = "", categoryOptions = [] }: MyCardsClientProps) {
   const {
     cards,
     deletingId,
@@ -67,6 +68,7 @@ export function MyCardsClient({ cards: initialCards, isAdmin = false, currentUse
         onChange={handleFiltersChange} 
         isAdmin={isAdmin}
       userOptions={userOptions}
+      categoryOptions={categoryOptions}  
     />
 
       {/* ── Grid ── */}
