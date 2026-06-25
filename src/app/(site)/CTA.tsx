@@ -4,13 +4,13 @@ export default function CTA (){
            <section className="w-full pt-16  flex flex-col justify-center items-center-safe">
       <div className="width-padding mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-          <div className="flex items-center">
+          <div className="flex items-center lg:justify-normal lg:text-start justify-center text-center">
             <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 leading-tight">
              Creativity Made <br/> Simple.
             </h2>
           </div>
           
-          <div className="flex items-center">
+          <div className="flex items-center  lg:justify-normal lg:text-start justify-center text-center">
             <p className="text-gray-600 text-lg leading-relaxed">
              Harness the power of artificial intelligence to create innovative solutions, automate complex tasks, and unlock new possibilities. Our AI-powered tools help businesses and creators work smarter, faster, and more efficiently.
             </p>
