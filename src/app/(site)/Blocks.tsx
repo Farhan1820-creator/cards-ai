@@ -47,19 +47,19 @@ export default function Blocks() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 ">
           {steps.map((s, i) => {
             const Icon = s.icon;
             return (
               <div
                 key={i}
-                className="group relative"
-                >
+                className="group relative "
+              >
                 <div className="relative glass rounded-3xl p-8 border border-primary/20 hover:border-primary/60 transition-all duration-500 h-full overflow-hidden">
-                  
 
-                  <div className="relative">
-<div className="w-14 h-14 rounded-2xl bg-primary  flex items-center justify-center shadow-lg shadow-primary-500/30 mb-6 group-hover:scale-110 transition-transform">
+
+                  <div className="relative flex flex-col items-center justify-center text-center lg:inline lg:text-start">
+                    <div className="w-14 h-14 rounded-2xl bg-primary  flex items-center justify-center shadow-lg shadow-primary-500/30 mb-6 group-hover:scale-110 transition-transform">
                       <Icon className="w-7 h-7 text-white" />
                     </div>
                     <h3 className="text-xl font-bold mb-3 text-gray-900">
