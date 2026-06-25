@@ -54,7 +54,7 @@ export default function ContactPage() {
           {/* Email */}
           <a
             href="mailto:info@taibacreations.com"
-            className="group rounded-2xl border border-gray-100 p-7 hover:border-primary/30 hover:shadow-sm transition-all flex flex-col gap-4"
+            className="items-center justify-center text-center group rounded-2xl border border-gray-100 p-7 hover:border-primary/30 hover:shadow-sm transition-all flex flex-col gap-4"
           >
             <div className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center text-primary-foreground">
               <Mail className="w-5 h-5" />
@@ -78,7 +78,7 @@ export default function ContactPage() {
           {/* Phone */}
           <a
             href="tel:+923341100088"
-            className="group rounded-2xl border border-gray-100 p-7 hover:border-primary/30 hover:shadow-sm transition-all flex flex-col gap-4"
+            className="items-center justify-center text-center group rounded-2xl border border-gray-100 p-7 hover:border-primary/30 hover:shadow-sm transition-all flex flex-col gap-4"
           >
             <div className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center text-primary-foreground">
               <Phone className="w-5 h-5" />
@@ -104,7 +104,7 @@ export default function ContactPage() {
             href="https://wa.me/923341100088"
             target="_blank"
             rel="noopener noreferrer"
-            className="group rounded-2xl border border-gray-100 p-7 hover:border-primary/30 hover:shadow-sm transition-all flex flex-col gap-4"
+            className="flex items-center justify-center text-center group rounded-2xl border border-gray-100 p-7 hover:border-primary/30 hover:shadow-sm transition-all flex-col gap-4"
           >
             <div className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center text-primary-foreground">
               <MessageCircle className="w-5 h-5" />
@@ -133,7 +133,6 @@ export default function ContactPage() {
         <div className="h-px bg-gray-100" />
       </div>
 
-      {/* ── FAQ ── */}
      {/* ── FAQ ── */}
       <section className="width-padding py-16 mx-auto w-full">
         <div className="text-center mb-10">

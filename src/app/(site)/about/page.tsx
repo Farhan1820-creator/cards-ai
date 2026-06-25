@@ -36,7 +36,7 @@ export default function About() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
           {/* Method 1 — Templates */}
-          <div className="rounded-2xl border border-gray-100 p-7 hover:border-primary/30 hover:shadow-sm transition-all">
+          <div className="text-center lg:text-start rounded-2xl border border-gray-100 p-7 hover:border-primary/30 hover:shadow-sm transition-all">
             <span className="text-[10px] font-bold tracking-widest uppercase text-primary">
               Method 01
             </span>
@@ -58,7 +58,7 @@ export default function About() {
           </div>
 
           {/* Method 2 — AI (Coming Soon) */}
-          <div className="rounded-2xl border border-gray-100 p-7 relative overflow-hidden opacity-70">
+          <div className="text-center lg:text-start rounded-2xl border border-gray-100 p-7 relative overflow-hidden opacity-70">
             <span className="text-[10px] font-bold tracking-widest uppercase text-primary">
               Method 02
             </span>
