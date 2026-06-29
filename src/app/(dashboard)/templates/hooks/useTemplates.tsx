@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Template } from "@/types/template";
 
 export interface CategoryOption { id: string; name: string; }
@@ -60,7 +60,7 @@ export function useTemplates(options: UseTemplatesOptions = {}) {
       .catch((err) => setError(err instanceof Error ? err.message : "Something went wrong"))
       .finally(() => setIsLoading(false));
 
-  }, [category]); // initialTemplates intentionally excluded — stable on mount
+  }, [category, initialTemplates]); // initialTemplates intentionally excluded — stable on mount
 
   const filtered = useMemo(() => {
     if (!search.trim()) return allTemplates;

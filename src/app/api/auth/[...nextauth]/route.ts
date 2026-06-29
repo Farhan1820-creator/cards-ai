@@ -33,10 +33,6 @@ export const authOptions: AuthOptions = {
           throw new Error("Invalid email or password");
         }
 
-        if (user.isBanned) {
-          throw new Error("Your account has been banned");
-        }
-
         const isValid = await bcrypt.compare(credentials.password, user.password);
         if (!isValid) {
           throw new Error("Invalid email or password");
@@ -48,7 +44,6 @@ export const authOptions: AuthOptions = {
           name: user.name,
           image: user.image,
           isAdmin: user.isAdmin,
-          isBanned: user.isBanned,
         };
       },
     }),
@@ -66,16 +61,13 @@ export const authOptions: AuthOptions = {
           .from(users)
           .where(eq(users.email, user.email));
 
-        if (existingUser) {
-          if (existingUser.isBanned) return false;
-        } else {
+        if (!existingUser) {
           await db.insert(users).values({
             id: user.id!,
             email: user.email,
             name: user.name,
             image: user.image,
             isAdmin: false,
-            isBanned: false,
           });
         }
       }
@@ -83,44 +75,18 @@ export const authOptions: AuthOptions = {
       return true;
     },
 
-    async jwt({ token, user, trigger }) {
-      // Pehli baar login — user object available hota hai
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         token.isAdmin = user.isAdmin ?? false;
-        token.isBanned = user.isBanned ?? false;
-        token.isDeleted = false;
       }
-
-      // Har signIn pe DB se latest status fetch karo
-      // Credentials aur Google dono ke liye kaam karega
-      if (trigger === "signIn") {
-        const [dbUser] = await db
-          .select({
-            isAdmin: users.isAdmin,
-            isBanned: users.isBanned,
-          })
-          .from(users)
-          .where(eq(users.id, token.id));
-
-        if (!dbUser) {
-          // User DB mein exist nahi — deleted hai
-          token.isDeleted = true;
-        } else {
-          token.isAdmin = dbUser.isAdmin;
-          token.isBanned = dbUser.isBanned;
-          token.isDeleted = false;
-        }
-      }
-
       return token;
     },
 
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id;
-        session.user.isAdmin = token.isAdmin;
-        session.user.isBanned = token.isBanned;
+        session.user.id = token.id as string;
+        session.user.isAdmin = token.isAdmin as boolean;
       }
       return session;
     },

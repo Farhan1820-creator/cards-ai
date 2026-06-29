@@ -15,7 +15,6 @@ export const users = pgTable("users", {
   password: text("password"),
   image: text("image"),
   isAdmin: boolean("is_admin").default(false).notNull(),
-  isBanned: boolean("is_banned").default(false).notNull(),
   otp: varchar("otp", { length: 6 }),
   otpExpires: timestamp("otp_expires"),
   createdAt: timestamp("created_at").defaultNow(),

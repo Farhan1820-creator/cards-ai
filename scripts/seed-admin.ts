@@ -41,7 +41,6 @@ async function seedAdmin() {
     name:     ADMIN_NAME,
     password: hashedPassword,
     isAdmin:  true,
-    isBanned: false,
   });
 
   console.log("✅ Admin user created:", ADMIN_EMAIL);

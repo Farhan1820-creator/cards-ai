@@ -23,7 +23,6 @@ export default async function UsersPage() {
     email: u.email,
     image: u.image,
     isAdmin: u.isAdmin,
-    isBanned: u.isBanned,
     createdAt: u.createdAt ? u.createdAt.toISOString() : null,
   }));
 

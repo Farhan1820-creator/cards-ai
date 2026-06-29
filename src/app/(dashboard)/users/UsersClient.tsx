@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { UserStatsCards } from "./UserStatsCards";
 import { UserTable } from "./UserTable";
-import { UserDeleteDialog } from "./UserDeleteDialog";
 
 // ── Types ─────────────────────────────────────────────────────────
 export type UserStatus = "Active";
@@ -14,7 +13,6 @@ export interface DBUser {
   email: string;
   image: string | null;
   isAdmin: boolean;
-  isBanned: boolean;
   createdAt: string | null;
 }
 
@@ -75,42 +73,18 @@ export function transformUsers(dbUsers: DBUser[]): User[] {
 
 // ── Main Client ───────────────────────────────────────────────────
 export default function UsersClient({ dbUsers }: { dbUsers: DBUser[] }) {
-  const [users, setUsers] = useState<DBUser[]>(dbUsers);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+  const [users, _setUsers] = useState<DBUser[]>(dbUsers);
 
   const USERS = transformUsers(users);
 
-  async function handleDeleteUser(dbId: string) {
-    setDeletingId(dbId);
-    setDeleteTarget(null);
-    try {
-      const res = await fetch(`/api/admin/users/${dbId}`, { method: "DELETE" });
-      if (res.ok) {
-        setUsers((prev) => prev.filter((u) => u.id !== dbId));
-      } else {
-        const data = await res.json();
-        alert(data.error || "Delete failed");
-      }
-    } finally {
-      setDeletingId(null);
-    }
-  }
 
   return (
     <div className="h-full overflow-y-auto bg-[#f5f6fa] font-sans p-6 lg:p-8">
       <UserStatsCards users={USERS} />
       <UserTable
         users={USERS}
-        deletingId={deletingId}
-        onDeleteClick={setDeleteTarget}
       />
-      <UserDeleteDialog
-        target={deleteTarget}
-        deletingId={deletingId}
-        onConfirm={handleDeleteUser}
-        onCancel={() => setDeleteTarget(null)}
-      />
+   
     </div>
   );
 }

@@ -9,9 +9,5 @@ export async function requireUser() {
     redirect("/login");
   }
 
-  if (session.user.isBanned) {
-    redirect("/login");
-  }
-
   return session.user;
 }

@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Image from "next/image";
 import { User, formatDate } from "./UsersClient";
-import { verifiedAction as runVerifiedAction } from "@/lib/actions/verifiedAction";
 import Link from "next/link";
 
 
@@ -32,11 +31,9 @@ function Avatar({ user, size = "md" }: { user: User; size?: "sm" | "md" | "lg" }
 
 interface UserTableProps {
   users: User[];
-  deletingId: string | null;
-  onDeleteClick: (user: User) => void;
 }
 
-export function UserTable({ users, deletingId, onDeleteClick }: UserTableProps) {
+export function UserTable({ users }: UserTableProps) {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const perPage = 6;
@@ -149,23 +146,7 @@ export function UserTable({ users, deletingId, onDeleteClick }: UserTableProps) 
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                         </svg>
                         </Link>
-                      <button
-                        onClick={() => runVerifiedAction(async () => onDeleteClick(user))}
-                        disabled={deletingId === user.dbId}
-                        className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors disabled:opacity-40"
-                        title="Delete"
-                      >
-                        {deletingId === user.dbId ? (
-                          <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                          </svg>
-                        ) : (
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        )}
-                      </button>
+                  
                     </div>
                   </td>
                 </tr>

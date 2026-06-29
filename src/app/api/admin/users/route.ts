@@ -29,7 +29,6 @@ export async function GET(req: Request) {
       email:     users.email,
       image:     users.image,
       isAdmin:   users.isAdmin,
-      isBanned:  users.isBanned,
       createdAt: users.createdAt,
     })
     .from(users)
