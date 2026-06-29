@@ -57,7 +57,7 @@ export function useMyCards(initialCards: CardItem[], isAdmin = false, initialUse
         !card.recipientName?.toLowerCase().includes(searchLower) &&
         !card.categoryName?.toLowerCase().includes(searchLower)
       ) return false;
-      if (filters.categoryName && card.categoryName?.toLowerCase() !== filters.categoryName.toLowerCase()) return false;
+if (filters.categoryName && card.categoryName?.toLowerCase() !== filters.categoryName.toLowerCase()) return false;
       if (filters.user && card.createdByEmail !== filters.user) return false;
       if (filters.dateFrom && card.createdAtRaw < filters.dateFrom) return false;
       if (filters.dateTo && card.createdAtRaw > filters.dateTo) return false;

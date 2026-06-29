@@ -2,7 +2,6 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
-// ── Types ─────────────────────────────────────────────────────
 export interface OverlayConfig {
   photo:         { x: number; y: number; r: number };
   recipientName: { x: number; y: number; fontSize: number };
@@ -21,62 +20,65 @@ const CANVAS_H = 1350;
 type DragTarget = "photo" | "recipientName" | "message" | null;
 
 interface OverlayConfiguratorProps {
-  imageUrl:  string;                               // template background (base64 or URL)
-  config:    OverlayConfig;
-  onChange:  (config: OverlayConfig) => void;
+  imageUrl: string;
+  config:   OverlayConfig;
+  onChange: (config: OverlayConfig) => void;
 }
 
-// ── Helpers ───────────────────────────────────────────────────
-function canvasToDOM(
-  canvasX: number,
-  canvasY: number,
-  rect: DOMRect,
-): { x: number; y: number } {
-  const scaleX = rect.width  / CANVAS_W;
-  const scaleY = rect.height / CANVAS_H;
-  return { x: canvasX * scaleX, y: canvasY * scaleY };
+function domToCanvas(domX: number, domY: number, scaleX: number, scaleY: number) {
+  return { x: domX / scaleX, y: domY / scaleY };
 }
 
-function domToCanvas(
-  domX: number,
-  domY: number,
-  rect: DOMRect,
-): { x: number; y: number } {
-  const scaleX = CANVAS_W / rect.width;
-  const scaleY = CANVAS_H / rect.height;
-  return { x: domX * scaleX, y: domY * scaleY };
-}
-
-// ── Component ─────────────────────────────────────────────────
 export function OverlayConfigurator({ imageUrl, config, onChange }: OverlayConfiguratorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const imgRef       = useRef<HTMLImageElement | null>(null);
+  const roRef        = useRef<ResizeObserver | null>(null);
+
   const [imgLoaded,  setImgLoaded]  = useState(false);
   const [dragging,   setDragging]   = useState<DragTarget>(null);
-  const dragOffset   = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  // ── KEY CHANGE: scale state ──────────────────────────────────
+  const [scale, setScale] = useState({ x: 1, y: 1 });
+  const dragOffset = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
   // Preload image
   useEffect(() => {
     setImgLoaded(false);
-    const img    = new Image();
-    img.onload   = () => { imgRef.current = img; setImgLoaded(true); };
-    img.onerror  = () => setImgLoaded(false);
+    const img       = new Image();
     img.crossOrigin = "anonymous";
-    img.src      = imageUrl;
+    img.onload      = () => { imgRef.current = img; setImgLoaded(true); };
+    img.onerror     = () => setImgLoaded(false);
+    img.src         = imageUrl;
   }, [imageUrl]);
 
-  // ── Pointer handlers ─────────────────────────────────────────
-  const getRect = useCallback(() => containerRef.current?.getBoundingClientRect() ?? null, []);
+  // ── ResizeObserver — same as useCanvasCoords ─────────────────
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!node) return;
 
-  const handlePointerDown = useCallback((
-    e: React.PointerEvent,
-    target: DragTarget,
-  ) => {
+    const update = (w: number, h: number) => {
+      if (w === 0 || h === 0) return;
+      setScale({ x: w / CANVAS_W, y: h / CANVAS_H });
+    };
+
+    const { width, height } = node.getBoundingClientRect();
+    update(width, height);
+
+    roRef.current = new ResizeObserver(([entry]) => {
+      const { width: w, height: h } = entry.contentRect;
+      update(w, h);
+    });
+    roRef.current.observe(node);
+    return () => roRef.current?.disconnect();
+  }, []);
+
+  // ── Pointer handlers ─────────────────────────────────────────
+  const handlePointerDown = useCallback((e: React.PointerEvent, target: DragTarget) => {
     e.stopPropagation();
-    const rect = getRect(); if (!rect) return;
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
     const relX = e.clientX - rect.left;
     const relY = e.clientY - rect.top;
-    const cv   = domToCanvas(relX, relY, rect);
+    const cv   = domToCanvas(relX, relY, scale.x, scale.y);
 
     let anchorX = 0, anchorY = 0;
     if (target === "photo")         { anchorX = config.photo.x;         anchorY = config.photo.y; }
@@ -86,46 +88,45 @@ export function OverlayConfigurator({ imageUrl, config, onChange }: OverlayConfi
     dragOffset.current = { x: cv.x - anchorX, y: cv.y - anchorY };
     setDragging(target);
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-  }, [config, getRect]);
+  }, [config, scale]);
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     if (!dragging) return;
-    const rect = getRect(); if (!rect) return;
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
     const relX = e.clientX - rect.left;
     const relY = e.clientY - rect.top;
-    const cv   = domToCanvas(relX, relY, rect);
+    const cv   = domToCanvas(relX, relY, scale.x, scale.y);
     const nx   = Math.round(cv.x - dragOffset.current.x);
     const ny   = Math.round(cv.y - dragOffset.current.y);
+    const cx   = Math.max(0, Math.min(CANVAS_W, nx));
+    const cy   = Math.max(0, Math.min(CANVAS_H, ny));
 
-    // Clamp to canvas
-    const cx = Math.max(0, Math.min(CANVAS_W, nx));
-    const cy = Math.max(0, Math.min(CANVAS_H, ny));
-
-    if (dragging === "photo") {
+    if (dragging === "photo")
       onChange({ ...config, photo: { ...config.photo, x: cx, y: cy } });
-    } else if (dragging === "recipientName") {
+    else if (dragging === "recipientName")
       onChange({ ...config, recipientName: { ...config.recipientName, x: cx, y: cy } });
-    } else if (dragging === "message") {
+    else if (dragging === "message")
       onChange({ ...config, message: { ...config.message, x: cx, y: cy } });
-    }
-  }, [dragging, config, onChange, getRect]);
+  }, [dragging, config, onChange, scale]);
 
   const handlePointerUp = useCallback(() => setDragging(null), []);
 
-  // ── Render overlay elements as DOM elements over the image ────
+  // ── Render overlays using scale state ────────────────────────
   const renderOverlays = () => {
-  const rect = containerRef.current?.getBoundingClientRect();
-  if (!rect || !imgLoaded) return null;
+    if (!imgLoaded) return null;
 
-  const scaleX = rect.width / CANVAS_W;  // 👈 add karo
+    const photoR      = config.photo.r * scale.x;
+    const photoLeft   = config.photo.x * scale.x - photoR;
+    const photoTop    = config.photo.y * scale.y - photoR;
 
-  const photoDOM = canvasToDOM(config.photo.x, config.photo.y, rect);
-  const nameDOM  = canvasToDOM(config.recipientName.x, config.recipientName.y, rect);
-  const msgDOM   = canvasToDOM(config.message.x, config.message.y, rect);
-  const photoR   = config.photo.r * scaleX;
+    const nameLeft    = config.recipientName.x * scale.x;
+    const nameTop     = config.recipientName.y * scale.y;
+    const nameFontSize = config.recipientName.fontSize * scale.x;
 
-  const nameFontSize = config.recipientName.fontSize * scaleX;  // 👈 add karo
-  const msgFontSize  = config.message.fontSize * scaleX;        // 👈 add karo
+    const msgLeft     = config.message.x * scale.x;
+    const msgTop      = config.message.y * scale.y;
+    const msgFontSize = config.message.fontSize * scale.x;
 
     return (
       <>
@@ -133,22 +134,22 @@ export function OverlayConfigurator({ imageUrl, config, onChange }: OverlayConfi
         <div
           onPointerDown={(e) => handlePointerDown(e, "photo")}
           style={{
-            position:    "absolute",
-            left:        photoDOM.x - photoR,
-            top:         photoDOM.y - photoR,
-            width:       photoR * 2,
-            height:      photoR * 2,
-            borderRadius: "50%",
-            border:      `2px dashed ${dragging === "photo" ? "#6366f1" : "#ffffff"}`,
-            background:  "rgba(99,102,241,0.15)",
-            cursor:      "grab",
-            display:     "flex",
-            alignItems:  "center",
+            position:       "absolute",
+            left:           photoLeft,
+            top:            photoTop,
+            width:          photoR * 2,
+            height:         photoR * 2,
+            borderRadius:   "50%",
+            border:         `2px dashed ${dragging === "photo" ? "#6366f1" : "#ffffff"}`,
+            background:     "rgba(99,102,241,0.15)",
+            cursor:         "grab",
+            display:        "flex",
+            alignItems:     "center",
             justifyContent: "center",
-            userSelect:  "none",
-            touchAction: "none",
-            boxShadow:   dragging === "photo" ? "0 0 0 2px #6366f1" : "none",
-            transition:  "border-color 0.15s, box-shadow 0.15s",
+            userSelect:     "none",
+            touchAction:    "none",
+            boxShadow:      dragging === "photo" ? "0 0 0 2px #6366f1" : "none",
+            transition:     "border-color 0.15s, box-shadow 0.15s",
           }}
         >
           <span style={{ fontSize: 11, color: "#fff", fontWeight: 700, textShadow: "0 1px 3px rgba(0,0,0,0.8)", pointerEvents: "none" }}>
@@ -160,47 +161,47 @@ export function OverlayConfigurator({ imageUrl, config, onChange }: OverlayConfi
         <div
           onPointerDown={(e) => handlePointerDown(e, "recipientName")}
           style={{
-            position:   "absolute",
-            left:       nameDOM.x,
-            top:        nameDOM.y,
-            transform:  "translate(-50%, -50%)",
-            background: dragging === "recipientName" ? "rgba(99,102,241,0.85)" : "rgba(0,0,0,0.55)",
-            color:      "#fff",
-            fontSize: nameFontSize, 
-            fontWeight: 700,
-            padding:    "4px 10px",
+            position:    "absolute",
+            left:        nameLeft,
+            top:         nameTop,
+            transform:   "translate(-50%, -50%)",
+            background:  dragging === "recipientName" ? "rgba(99,102,241,0.85)" : "rgba(0,0,0,0.55)",
+            color:       "#fff",
+            fontSize:    nameFontSize,
+            fontWeight:  700,
+            padding:     "4px 10px",
             borderRadius: 6,
-            cursor:     "grab",
-            whiteSpace: "nowrap",
-            userSelect: "none",
+            cursor:      "grab",
+            whiteSpace:  "nowrap",
+            userSelect:  "none",
             touchAction: "none",
-            border:     `1.5px dashed ${dragging === "recipientName" ? "#fff" : "rgba(255,255,255,0.5)"}`,
-            transition: "background 0.15s",
+            border:      `1.5px dashed ${dragging === "recipientName" ? "#fff" : "rgba(255,255,255,0.5)"}`,
+            transition:  "background 0.15s",
           }}
         >
-          Aa Recipient Name
+          Recipient Name
         </div>
 
         {/* Message */}
         <div
           onPointerDown={(e) => handlePointerDown(e, "message")}
           style={{
-            position:   "absolute",
-            left:       msgDOM.x,
-            top:        msgDOM.y,
-            transform:  "translate(-50%, -50%)",
-            background: dragging === "message" ? "rgba(99,102,241,0.85)" : "rgba(0,0,0,0.55)",
-            color:      "#fff",
-            fontSize: msgFontSize, 
-            fontWeight: 600,
-            padding:    "4px 10px",
+            position:    "absolute",
+            left:        msgLeft,
+            top:         msgTop,
+            transform:   "translate(-50%, -50%)",
+            background:  dragging === "message" ? "rgba(99,102,241,0.85)" : "rgba(0,0,0,0.55)",
+            color:       "#fff",
+            fontSize:    msgFontSize,
+            fontWeight:  600,
+            padding:     "4px 10px",
             borderRadius: 6,
-            cursor:     "grab",
-            whiteSpace: "nowrap",
-            userSelect: "none",
+            cursor:      "grab",
+            whiteSpace:  "nowrap",
+            userSelect:  "none",
             touchAction: "none",
-            border:     `1.5px dashed ${dragging === "message" ? "#fff" : "rgba(255,255,255,0.5)"}`,
-            transition: "background 0.15s",
+            border:      `1.5px dashed ${dragging === "message" ? "#fff" : "rgba(255,255,255,0.5)"}`,
+            transition:  "background 0.15s",
           }}
         >
           Aa Message text...
@@ -225,43 +226,35 @@ export function OverlayConfigurator({ imageUrl, config, onChange }: OverlayConfi
         </button>
       </div>
 
-      {/* Canvas area */}
       <div
         ref={containerRef}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
         style={{
-          position:   "relative",
-          width:      "100%",
+          position:    "relative",
+          width:       "100%",
           aspectRatio: `${CANVAS_W} / ${CANVAS_H}`,
-          overflow:   "hidden",
+          overflow:    "hidden",
           borderRadius: 12,
-          border:     "1.5px solid #e5e7eb",
-          background: "#f3f4f6",
-          cursor:     dragging ? "grabbing" : "default",
-          userSelect: "none",
+          border:      "1.5px solid #e5e7eb",
+          background:  "#f3f4f6",
+          cursor:      dragging ? "grabbing" : "default",
+          userSelect:  "none",
         }}
       >
         {imgLoaded ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
-<img
-  src={imageUrl}
-  alt="Template background"
-  style={{ 
-    width: "100%", 
-    height: "100%", 
-    objectFit: "fill",  // cover → fill
-    display: "block", 
-    pointerEvents: "none" 
-  }}
-/>
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={imageUrl}
+            alt="Template background"
+            style={{ width: "100%", height: "100%", objectFit: "fill", display: "block", pointerEvents: "none" }}
+          />
         ) : (
           <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <span className="text-xs text-gray-400">Loading preview…</span>
           </div>
         )}
-
         {renderOverlays()}
       </div>
 
@@ -284,12 +277,11 @@ export function OverlayConfigurator({ imageUrl, config, onChange }: OverlayConfi
         </div>
       </div>
 
-      {/* Font size sliders */}
+      {/* Sliders */}
       <div className="space-y-2">
-                <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3">
           <span className="text-xs text-gray-600 w-24 shrink-0">Photo r: <b>{config.photo.r}px</b></span>
-          <input
-            type="range" min={80} max={400} step={10}
+          <input type="range" min={80} max={400} step={10}
             value={config.photo.r}
             onChange={(e) => onChange({ ...config, photo: { ...config.photo, r: Number(e.target.value) } })}
             className="flex-1 accent-indigo-600"
@@ -297,8 +289,7 @@ export function OverlayConfigurator({ imageUrl, config, onChange }: OverlayConfi
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs text-gray-600 w-24 shrink-0">Name size: <b>{config.recipientName.fontSize}px</b></span>
-          <input
-            type="range" min={20} max={80} step={2}
+          <input type="range" min={20} max={80} step={2}
             value={config.recipientName.fontSize}
             onChange={(e) => onChange({ ...config, recipientName: { ...config.recipientName, fontSize: Number(e.target.value) } })}
             className="flex-1 accent-indigo-600"
@@ -306,8 +297,7 @@ export function OverlayConfigurator({ imageUrl, config, onChange }: OverlayConfi
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs text-gray-600 w-24 shrink-0">Msg size: <b>{config.message.fontSize}px</b></span>
-          <input
-            type="range" min={14} max={60} step={2}
+          <input type="range" min={14} max={60} step={2}
             value={config.message.fontSize}
             onChange={(e) => onChange({ ...config, message: { ...config.message, fontSize: Number(e.target.value) } })}
             className="flex-1 accent-indigo-600"

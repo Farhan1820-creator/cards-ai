@@ -171,7 +171,7 @@ export function CardFilters({
           >
             <option value="">All Categories</option>
             {categoryOptions.map((cat) => (
-              <option key={cat.slug} value={cat.name}>
+            <option key={cat.slug} value={cat.name}>
                 {cat.name}
               </option>
             ))}

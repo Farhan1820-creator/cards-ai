@@ -30,8 +30,9 @@ interface AdminTemplate {
 
 interface TemplatesClientProps {
   isAdmin?:          boolean;
-  initialTemplates?: AdminTemplate[] | null;
-}
+  initialTemplates?:     AdminTemplate[] | null;      // admin ke liye (existing)
+  initialUserTemplates?: Template[] | null;           // non-admin ke liye (new)
+  initialCategories?:    { id: string; name: string }[] | null;}
 
 // ── API helpers ────────────────────────────────────────────────
 // Raw template shape jo server return karta hai
@@ -92,17 +93,25 @@ async function apiDeleteTemplate(id: string): Promise<void> {
 const ANIMATION_MS = 400;
 
 // ── Main Component ─────────────────────────────────────────────
-export function TemplatesClient({ isAdmin = false, initialTemplates = null }: TemplatesClientProps) {
+export function TemplatesClient({
+  isAdmin = false,
+  initialTemplates = null,
+  initialUserTemplates,   // ← add
+  initialCategories,      // ← add
+}: TemplatesClientProps) {
 
   // ── User (non-admin) state ─────────────────────────────────────
-  const {
+const {
     templates, isLoading, error,
     categories,
     category, setCategory,
     search, setSearch,
     page, setPage,
     totalPages, total,
-  } = useTemplates();
+  } = useTemplates({
+    initialTemplates:  initialUserTemplates ?? undefined,  // ← add
+    initialCategories: initialCategories    ?? undefined,  // ← add
+  });
 
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [userFiltersOpen,  setUserFiltersOpen]  = useState(false);
