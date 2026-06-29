@@ -25,7 +25,6 @@ export interface User {
   initials: string;
   avatarColor: string;
   isAdmin: boolean;
-  isBanned: boolean;
   status: UserStatus;
   createdAt: string;
 }
@@ -65,7 +64,6 @@ export function transformUsers(dbUsers: DBUser[]): User[] {
       avatarColor: AVATAR_COLORS[i % AVATAR_COLORS.length],
       status: "Active" as UserStatus,
       isAdmin: u.isAdmin,
-      isBanned: u.isBanned,
       createdAt: u.createdAt ? new Date(u.createdAt).toISOString() : "",
     };
   });
