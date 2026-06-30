@@ -55,7 +55,21 @@ export function TemplatePreview({
   const [photoTransform, setPhotoTransform] = useState<PhotoTransform>(
     externalTransform ?? { scale: 1, offsetX: 0, offsetY: 0 },
   );
-  const confirmedUrl = useRef<string | null>(null);
+const confirmedUrl = useRef<string | null>(null);
+  const imageCache   = useRef<Map<string, HTMLImageElement>>(new Map());
+  const bgImageRef   = useRef<HTMLImageElement | null>(null);
+
+  const loadImg = useCallback((src: string) => {
+    const cached = imageCache.current.get(src);
+    if (cached) return Promise.resolve(cached);
+    return new Promise<HTMLImageElement>((res, rej) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload  = () => { imageCache.current.set(src, img); res(img); };
+      img.onerror = rej;
+      img.src     = src;
+    });
+  }, []);
 
   const config = useMemo(() => overlayConfig ?? DEFAULT_OVERLAY, [overlayConfig]);
   const { x: photoX, y: photoY, r: photoR } = config.photo;
@@ -111,104 +125,124 @@ export function TemplatePreview({
 
   const handleCloseCrop = useCallback(() => setCropOpen(false), []);
 
-  // Canvas render
+ // Debounce text inputs so canvas doesn't redraw on every keystroke
+  const [debouncedName, setDebouncedName] = useState(recipientName);
+  const [debouncedMessage, setDebouncedMessage] = useState(message);
+
   useEffect(() => {
-    if (!template) return;
+    const t = setTimeout(() => {
+      setDebouncedName(recipientName);
+      setDebouncedMessage(message);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [recipientName, message]);
+
+  // Canvas render
+// Draws photo + text on top of the already-loaded background (no network call here)
+  const drawScene = useCallback(async (cancelledRef: { current: boolean }) => {
     const canvas = canvasRef.current; if (!canvas) return;
     const ctx    = canvas.getContext("2d"); if (!ctx) return;
-    let cancelled = false;
+    const bg     = bgImageRef.current;
+    if (!bg) return;
 
-    const loadImg = (src: string) =>
-      new Promise<HTMLImageElement>((res, rej) => {
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.onload  = () => res(img);
-        img.onerror = rej;
-        img.src     = src;
-      });
+    try {
+      canvas.width  = CANVAS_W;
+      canvas.height = CANVAS_H;
+      ctx.drawImage(bg, 0, 0, CANVAS_W, CANVAS_H);
 
-    const render = async () => {
-      try {
-        canvas.width  = CANVAS_W;
-        canvas.height = CANVAS_H;
-
-        const bg = await loadImg(template.imageUrl);
-        if (cancelled) return;
-        ctx.drawImage(bg, 0, 0, CANVAS_W, CANVAS_H);
-
-        // Photo
-        if (photoUrl && !cropOpen) {
-          const img  = await loadImg(photoUrl);
-          if (cancelled) return;
-          const D    = photoR * 2;
-          const base = Math.max(D / img.naturalWidth, D / img.naturalHeight);
-          const fs   = base * photoTransform.scale;
-          const sw   = img.naturalWidth  * fs;
-          const sh   = img.naturalHeight * fs;
-          const dx   = photoX - sw / 2 + photoTransform.offsetX;
-          const dy   = photoY - sh / 2 + photoTransform.offsetY;
-          ctx.save();
-          ctx.beginPath();
-          ctx.arc(photoX, photoY, photoR, 0, Math.PI * 2);
-          ctx.clip();
-          ctx.drawImage(img, dx, dy, sw, sh);
-          ctx.restore();
-        }
-
-        // Recipient name
-        if (recipientName.trim()) {
-          ctx.font         = `bold ${config.recipientName.fontSize}px poppins,sans-serif`;
-          ctx.fillStyle    = nameColor || "#fff";
-          ctx.textAlign    = "center";
-          ctx.textBaseline = "middle";
-          const lh = config.recipientName.fontSize * 1.3;
-          let line = "", y = config.recipientName.y;
-          for (const word of recipientName.split(" ")) {
-            const test = line + word + " ";
-            if (ctx.measureText(test).width > 900 && line) {
-              ctx.fillText(line.trim(), config.recipientName.x, y);
-              line = word + " "; y += lh;
-            } else { line = test; }
-          }
-          ctx.fillText(line.trim(), config.recipientName.x, y);
-        }
-
-        // Message
-        if (message.trim()) {
-          ctx.font      = `${config.message.fontSize}px Arial,sans-serif`;
-          ctx.fillStyle = messageColor || "#fff";
-          ctx.textAlign = "center";
-          const lh = config.message.fontSize * 1.4;
-          let line = "", y = config.message.y;
-          for (const word of message.split(" ")) {
-            const test = line + word + " ";
-            if (ctx.measureText(test).width > 900 && line) {
-              ctx.fillText(line.trim(), config.message.x, y);
-              line = word + " "; y += lh;
-            } else { line = test; }
-          }
-          ctx.fillText(line.trim(), config.message.x, y);
-        }
-
-        if (cancelled) return;
-        const dataUrl = canvas.toDataURL("image/png");
-        setPreviewUrl(dataUrl);
-        onPreviewReady?.(dataUrl);
-      } catch (err) {
-        console.error("Preview render error:", err);
+      // Photo
+      if (photoUrl && !cropOpen) {
+        const img  = await loadImg(photoUrl);
+        if (cancelledRef.current) return;
+        const D    = photoR * 2;
+        const base = Math.max(D / img.naturalWidth, D / img.naturalHeight);
+        const fs   = base * photoTransform.scale;
+        const sw   = img.naturalWidth  * fs;
+        const sh   = img.naturalHeight * fs;
+        const dx   = photoX - sw / 2 + photoTransform.offsetX;
+        const dy   = photoY - sh / 2 + photoTransform.offsetY;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(photoX, photoY, photoR, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(img, dx, dy, sw, sh);
+        ctx.restore();
       }
-    };
 
-    render();
-    return () => { cancelled = true; };
+      // Recipient name
+      if (debouncedName.trim()) {
+        ctx.font         = `bold ${config.recipientName.fontSize}px poppins,sans-serif`;
+        ctx.fillStyle    = nameColor || "#fff";
+        ctx.textAlign    = "center";
+        ctx.textBaseline = "middle";
+        const lh = config.recipientName.fontSize * 1.3;
+        let line = "", y = config.recipientName.y;
+        for (const word of debouncedName.split(" ")) {
+          const test = line + word + " ";
+          if (ctx.measureText(test).width > 900 && line) {
+            ctx.fillText(line.trim(), config.recipientName.x, y);
+            line = word + " "; y += lh;
+          } else { line = test; }
+        }
+        ctx.fillText(line.trim(), config.recipientName.x, y);
+      }
+
+      // Message
+      if (debouncedMessage.trim()) {
+        ctx.font      = `${config.message.fontSize}px Arial,sans-serif`;
+        ctx.fillStyle = messageColor || "#fff";
+        ctx.textAlign = "center";
+        const lh = config.message.fontSize * 1.4;
+        let line = "", y = config.message.y;
+        for (const word of debouncedMessage.split(" ")) {
+          const test = line + word + " ";
+          if (ctx.measureText(test).width > 900 && line) {
+            ctx.fillText(line.trim(), config.message.x, y);
+            line = word + " "; y += lh;
+          } else { line = test; }
+        }
+        ctx.fillText(line.trim(), config.message.x, y);
+      }
+
+      if (cancelledRef.current) return;
+      const dataUrl = canvas.toDataURL("image/png");
+      setPreviewUrl(dataUrl);
+      onPreviewReady?.(dataUrl);
+    } catch (err) {
+      console.error("Preview render error:", err);
+    }
   }, [
-    template, recipientName, message, photoUrl, photoTransform, cropOpen,
-    nameColor, messageColor, onPreviewReady,
-    photoX, photoY, photoR,
-    config.recipientName.x, config.recipientName.y, config.recipientName.fontSize,
-    config.message.x, config.message.y, config.message.fontSize,
+    photoUrl, cropOpen, photoTransform, photoX, photoY, photoR,
+    debouncedName, debouncedMessage, nameColor, messageColor,
+    config, onPreviewReady, loadImg,
   ]);
 
+  // Effect A — background image sirf template change pe load hoti hai (network/cache)
+  useEffect(() => {
+    if (!template) { bgImageRef.current = null; return; }
+    let cancelled = false;
+    const cancelledRef = { current: false };
+
+    loadImg(template.imageUrl)
+      .then((img) => {
+        if (cancelled) return;
+        bgImageRef.current = img;
+        drawScene(cancelledRef);
+      })
+      .catch((err) => console.error("Background load error:", err));
+
+    return () => { cancelled = true; };
+  }, [template, loadImg, drawScene]);
+
+  // Effect B — text/photo/transform change pe sirf in-memory redraw, koi network call nahi
+  useEffect(() => {
+    if (!template || !bgImageRef.current) return;
+    const cancelledRef = { current: false };
+    drawScene(cancelledRef);
+    return () => { cancelledRef.current = true; };
+  }, [template, debouncedName, debouncedMessage, photoUrl, photoTransform, cropOpen, drawScene]);
+  
+  
   const photoCircle = domElements.get("photo");
 
   return (

@@ -117,7 +117,11 @@ export const TemplateGrid = memo(function TemplateGrid({
   const noneSelected = !selectedId || selectedId === NONE_TEMPLATE_ID;
 
   const handleNone     = useCallback(() => onSelect(null), [onSelect]);
-  const handleTemplate = useCallback((t: Template) => onSelect(t), [onSelect]);
+const handleTemplate = useCallback((t: Template) => {
+  const img = new window.Image();
+  img.src = t.imageUrl; // browser cache warm karega
+  onSelect(t);
+}, [onSelect]);
 
   return (
     <div className="space-y-1.5">

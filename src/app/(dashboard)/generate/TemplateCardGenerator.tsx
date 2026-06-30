@@ -166,26 +166,34 @@ useEffect(() => {
   return () => abortControllerRef.current?.abort();
 }, []);
 
-const handleGenerate = useCallback(async () => {
-  if (!canGenerate) return;
-  setIsLoading(true);
+const [pendingGenerate, setPendingGenerate] = useState(false);
+
+const handleGenerate = useCallback(() => {
+  if (!canGenerate || isLoading) return;
   setIsGenerated(false);
-  try {
-    const imageToSave = await waitForPreview();
-    setIsGenerated(true);
-    if (imageToSave) {
-      await autoSaveCard(imageToSave);
-    } else {
-      toast.error("Preview image not ready, try again");
-    }
-  } catch {
-    toast.error("Failed to process");
-  } finally {
+  setIsLoading(true);
+  setPendingGenerate(true);   // bas flag set karo, baaki effect sambhalega
+}, [canGenerate, isLoading]);
+
+// Jab bhi preview ready ho aur generate pending ho, auto-save karo
+useEffect(() => {
+  if (!pendingGenerate || !finalImage) return;
+
+  setPendingGenerate(false);
+  setIsGenerated(true);
+  autoSaveCard(finalImage).finally(() => setIsLoading(false));
+}, [pendingGenerate, finalImage, autoSaveCard]);
+
+// Safety: agar preview kabhi ready hi na ho to user stuck na rahe
+useEffect(() => {
+  if (!pendingGenerate) return;
+  const id = setTimeout(() => {
+    setPendingGenerate(false);
     setIsLoading(false);
-  }
-}, [canGenerate, autoSaveCard, waitForPreview]);
-
-
+    toast.error("Preview image not ready, try again");
+  }, 4000);
+  return () => clearTimeout(id);
+}, [pendingGenerate]);
  
  const handleDownload = useCallback((format: "PNG" | "JPEG" | "PDF" = "PNG") => {
 if (!finalImage) return;
@@ -289,7 +297,7 @@ overlayConfig={selectedTemplate?.overlayConfig ?? undefined}  // ← add yeh lin
      {/* New Card Button */}
      {(isGenerated || isEditing) && (
       <>
-      <Button
+      {/* <Button
         type="button"
         variant="outline"
         size="lg"
@@ -299,7 +307,7 @@ overlayConfig={selectedTemplate?.overlayConfig ?? undefined}  // ← add yeh lin
         }}
       >
         New Card
-      </Button>
+      </Button> */}
 
 
   <ActionButtons

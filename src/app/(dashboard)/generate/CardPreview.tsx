@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { ImageIcon } from "lucide-react";
 
@@ -22,7 +23,7 @@ export function CardPreview({ imageUrl, isLoading }: CardPreviewProps) {
             <div className="h-3 w-32 animate-pulse-soft rounded bg-muted" />
           </div>
         ) : imageUrl ? (
-          <img
+          <Image
             src={imageUrl}
             height={64}
             width={64}

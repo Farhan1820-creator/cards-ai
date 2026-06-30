@@ -60,9 +60,9 @@ function CardItemComponent({
       className={`group relative flex flex-col rounded-2xl overflow-hidden bg-white transition-all duration-200 cursor-pointer ${
         selectMode
           ? isSelected
-            ? "ring-2 ring-primary shadow-md"
+            ? "ring-2 ring-primary shadow-sm"
             : "ring-1 ring-border hover:ring-primary/40"
-          : "ring-1 ring-border hover:shadow-lg hover:-translate-y-0.5"
+          : "ring-1 ring-border hover:shadow-md "
       }`}
       onClick={handleClick}
       onContextMenu={handleContextMenu}
@@ -73,7 +73,7 @@ function CardItemComponent({
           alt={`${card.categoryName} card`}
           fill
           className={`object-cover transition-transform duration-300 ${
-            selectMode ? "" : "group-hover:scale-105"
+            selectMode ? "" : ""
           } ${isSelected ? "brightness-75" : ""}`}
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
         />
