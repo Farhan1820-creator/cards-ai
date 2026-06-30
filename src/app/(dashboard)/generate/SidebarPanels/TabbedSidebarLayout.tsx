@@ -98,8 +98,8 @@ const ProgressBar = memo(function ProgressBar({ percent, compact }: { percent: n
         <span className={`font-semibold uppercase tracking-widest text-muted-foreground ${compact ? "text-[9px]" : "text-[10px]"}`}>
           Progress
         </span>
-        <span className={`font-bold tabular-nums ${compact ? "text-[10px]" : "text-xs"} ${isComplete ? "text-emerald-600" : "text-primary"}`}>
-          {isComplete ? "Completed ✓" : `${percent}%`}
+        <span className={`font-bold tabular-nums ${compact ? "text-[10px]" : "text-xs"} text-primary`}>
+          {isComplete ? "Completed " : `${percent}%`}
         </span>
       </div>
       <div className={`w-full bg-gray-100 rounded-full overflow-hidden ${compact ? "h-1" : "h-1.5"}`}>
