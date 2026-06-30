@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,7 +34,7 @@ export default function MobileSheet({ template, onClose, onUse }: Props) {
     requestAnimationFrame(() => setOpen(true));
   }, []);
 
-  const close = () => {
+  const close = useCallback(() => {
     setOpen(false);
     if (sheetRef.current) {
       sheetRef.current.style.transition = ANIMATION;
@@ -45,9 +45,9 @@ export default function MobileSheet({ template, onClose, onUse }: Props) {
       backdropRef.current.style.opacity = "0";
     }
     setTimeout(onClose, 420);
-  };
+  }, [onClose]);
 
-  const snapBack = () => {
+  const snapBack = useCallback(() => {
     if (sheetRef.current) {
       sheetRef.current.style.transition = ANIMATION;
       sheetRef.current.style.transform = "translateY(0)";
@@ -56,7 +56,7 @@ export default function MobileSheet({ template, onClose, onUse }: Props) {
       backdropRef.current.style.transition = ANIMATION;
       backdropRef.current.style.opacity = "1";
     }
-  };
+  }, []);
 
   useEffect(() => {
     const sheet = sheetRef.current;
@@ -142,7 +142,7 @@ export default function MobileSheet({ template, onClose, onUse }: Props) {
       sheet.removeEventListener("touchcancel", onTouchEnd);
       if (raf.current) cancelAnimationFrame(raf.current);
     };
-  }, [close]);
+  }, [close, snapBack]);
 
   return (
     <>
@@ -171,13 +171,13 @@ export default function MobileSheet({ template, onClose, onUse }: Props) {
           <div className="h-1 w-12 rounded-full bg-border" />
         </div>
 
-        <div ref={contentRef} className="overflow-y-auto max-h-[85vh]">
-          <div className="relative aspect-[3/2] w-full">
+        <div ref={contentRef} className="overflow-y-auto max-h-[92vh]">
+<div className="relative aspect-[3/4] w-full bg-muted max-h-[60vh]">
             <Image
               src={template.imageUrl}
               alt={template.name}
               fill
-              className="object-cover"
+              className="object-contain"
               sizes="100vw"
               priority
             />
