@@ -7,32 +7,28 @@ import { deleteCloudinaryImage, uploadBase64Image } from "@/lib/cloudinary";
 import { extractCloudinaryPublicId } from "@/lib/cloudinary-utils";
 
 
-export async function GET(
-  _req: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
-  try {
-    const user = await requireUser();
-    const { id: cardId } = await context.params;
+export const GET = (
+  async (_req: NextRequest, context: { params: Promise<{ id: string }> }) => {
+    try {
+      const user = await requireUser();
+      const { id: cardId } = await context.params;
 
-    // .select() mein koi field restrict mat karein, taake saara data (imageUrl, cardType, nameColor, etc.) aa jaye
-    const [card] = await db
-      .select() 
-      .from(cards)
-      .where(and(eq(cards.id, cardId), eq(cards.userId, user.id)));
+      const [card] = await db
+        .select()
+        .from(cards)
+        .where(and(eq(cards.id, cardId), eq(cards.userId, user.id)));
 
-    if (!card) {
-      return NextResponse.json({ error: "Card not found" }, { status: 404 });
+      if (!card) {
+        return NextResponse.json({ error: "Card not found" }, { status: 404 });
+      }
+
+      return NextResponse.json({ card });
+    } catch (error) {
+      console.error("Get card error:", error);
+      return NextResponse.json({ error: "Failed to fetch card" }, { status: 500 });
     }
-    
-    // Frontend ko { card: {...} } format mein data bhejein
-    return NextResponse.json({ card });
-    
-  } catch (error) {
-    console.error("Get card error:", error);
-    return NextResponse.json({ error: "Failed to fetch card" }, { status: 500 });
   }
-}
+);
 
 export async function DELETE(
   _req: NextRequest,

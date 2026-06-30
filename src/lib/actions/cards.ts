@@ -4,7 +4,11 @@ import { db } from "@/db";
 import { cards, users } from "@/db/schema";
 import { nanoid } from "nanoid";
 import { desc, eq } from "drizzle-orm";
-import { deleteCloudinaryImage, extractCloudinaryPublicId } from "../cloudinary";
+import {
+  deleteCloudinaryImage,
+  extractCloudinaryPublicId,
+  uploadBase64Image, // ← import karo
+} from "../cloudinary";
 
 export async function createCard(data: {
   userId: string;
@@ -20,6 +24,16 @@ export async function createCard(data: {
   photoTransform?: { scale: number; offsetX: number; offsetY: number };
 }) {
 
+  // ── Agar photoUrl base64 hai to Cloudinary pe upload karo ──
+  let finalPhotoUrl: string | undefined = data.photoUrl;
+  if (data.photoUrl?.startsWith("data:image")) {
+    const { url } = await uploadBase64Image(
+      data.photoUrl,
+      `cards-ai/user-photos/${data.userId}`
+    );
+    finalPhotoUrl = url;
+  }
+
   const [card] = await db
     .insert(cards)
     .values({
@@ -33,7 +47,7 @@ export async function createCard(data: {
       prompt: data.prompt ?? "",
       nameColor: data.nameColor,
       messageColor: data.messageColor,
-      photoUrl: data.photoUrl,
+      photoUrl: finalPhotoUrl,
       photoTransform: data.photoTransform,
     })
     .returning();
@@ -80,6 +94,12 @@ export async function deleteCard(cardId: string) {
 
   const publicId = extractCloudinaryPublicId(card.imageUrl);
   if (publicId) await deleteCloudinaryImage(publicId);
+
+  // photoUrl bhi cleanup karo agar Cloudinary URL hai
+  if (card.photoUrl) {
+    const photoPublicId = extractCloudinaryPublicId(card.photoUrl);
+    if (photoPublicId) await deleteCloudinaryImage(photoPublicId);
+  }
 
   await db.delete(cards).where(eq(cards.id, cardId));
   return true;

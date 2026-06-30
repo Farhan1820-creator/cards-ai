@@ -15,6 +15,10 @@ export async function uploadBase64Image(
   const res = await cloudinary.uploader.upload(base64, {
     folder,
     resource_type: "image",
+    transformation: [
+      { quality: "auto:good", fetch_format: "auto" },
+      { width: 800, crop: "limit" }, // greeting card ke liye kaafi hai
+    ],
   });
 
   return {

@@ -286,7 +286,22 @@ overlayConfig={selectedTemplate?.overlayConfig ?? undefined}  // ← add yeh lin
         {buttonText}
       </Button>
 
-{(isGenerated || isEditing) && (
+     {/* New Card Button */}
+     {(isGenerated || isEditing) && (
+      <>
+      <Button
+        type="button"
+        variant="outline"
+        size="lg"
+        className="w-full h-10 text-sm font-semibold"
+        onClick={() => {
+          window.location.href = "/generate";
+        }}
+      >
+        New Card
+      </Button>
+
+
   <ActionButtons
     hasPreview={!!finalImage && !isLoading && !isSaving}
     onDownload={handleDownload}
@@ -294,6 +309,7 @@ overlayConfig={selectedTemplate?.overlayConfig ?? undefined}  // ← add yeh lin
     onReset={handleReset}
     onShare={handleShare}
   />
+  </>
 )}
     </div>
   );
