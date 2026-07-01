@@ -256,7 +256,7 @@ buttonText = initialIsEditing.current ? "Updated" : "Generated"; // ← isEditin
 }
 
   return (
-    <div className="flex flex-col gap-4 h-full">
+ <div className="flex flex-col gap-4 h-full overflow-y-auto scrollbar-hide">
       {/* Preview */}
       <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm flex-1 relative">
         <div className="block">
@@ -297,7 +297,7 @@ overlayConfig={selectedTemplate?.overlayConfig ?? undefined}  // ← add yeh lin
      {/* New Card Button */}
      {(isGenerated || isEditing) && (
       <>
-      {/* <Button
+      <Button
         type="button"
         variant="outline"
         size="lg"
@@ -307,7 +307,7 @@ overlayConfig={selectedTemplate?.overlayConfig ?? undefined}  // ← add yeh lin
         }}
       >
         New Card
-      </Button> */}
+      </Button>
 
 
   <ActionButtons
