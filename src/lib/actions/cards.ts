@@ -4,11 +4,7 @@ import { db } from "@/db";
 import { cards, users } from "@/db/schema";
 import { nanoid } from "nanoid";
 import { desc, eq } from "drizzle-orm";
-import {
-  deleteCloudinaryImage,
-  extractCloudinaryPublicId,
-  uploadBase64Image, // ← import karo
-} from "../cloudinary";
+import { deleteCloudinaryImage, extractCloudinaryPublicId } from "../cloudinary";
 
 export async function createCard(data: {
   userId: string;
@@ -20,20 +16,9 @@ export async function createCard(data: {
   categoryId: string;
   nameColor?: string;
   messageColor?: string;
-  photoUrl?: string;
+  photoUrl?: string; // already-uploaded Cloudinary URL (caller resolves this)
   photoTransform?: { scale: number; offsetX: number; offsetY: number };
 }) {
-
-  // ── Agar photoUrl base64 hai to Cloudinary pe upload karo ──
-  let finalPhotoUrl: string | undefined = data.photoUrl;
-  if (data.photoUrl?.startsWith("data:image")) {
-    const { url } = await uploadBase64Image(
-      data.photoUrl,
-      `cards-ai/user-photos/${data.userId}`
-    );
-    finalPhotoUrl = url;
-  }
-
   const [card] = await db
     .insert(cards)
     .values({
@@ -47,7 +32,7 @@ export async function createCard(data: {
       prompt: data.prompt ?? "",
       nameColor: data.nameColor,
       messageColor: data.messageColor,
-      photoUrl: finalPhotoUrl,
+      photoUrl: data.photoUrl,
       photoTransform: data.photoTransform,
     })
     .returning();

@@ -45,7 +45,7 @@ export function TemplatePreview({
   nameColor = "", messageColor = "",
   onPreviewReady,
   onRemovePhoto: _onRemovePhoto,
-  photoTransform: externalTransform,
+   photoTransform: externalTransform,
   onTransformChange,
   overlayConfig,
 }: TemplatePreviewProps) {
@@ -205,7 +205,7 @@ const confirmedUrl = useRef<string | null>(null);
       }
 
       if (cancelledRef.current) return;
-      const dataUrl = canvas.toDataURL("image/png");
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
       setPreviewUrl(dataUrl);
       onPreviewReady?.(dataUrl);
     } catch (err) {

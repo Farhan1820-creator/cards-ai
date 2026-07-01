@@ -3,8 +3,7 @@ import { requireUser } from "@/lib/require-user";
 import { db } from "@/db";
 import { cards } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
-import { deleteCloudinaryImage, uploadBase64Image } from "@/lib/cloudinary";
-import { extractCloudinaryPublicId } from "@/lib/cloudinary-utils";
+import { deleteCloudinaryImage, uploadBase64Image, extractCloudinaryPublicId } from "@/lib/cloudinary";
 
 
 export const GET = (
@@ -78,14 +77,20 @@ export async function PATCH(
     const body = await req.json();
     const { image, recipientName, message, nameColor, messageColor, photoUrl, templateId, photoTransform, categoryId } = body;
 
-    // ── Image update ─────────────────────────────────────────
-    let imageUrl: string = existing.imageUrl;
+    // ── Image + photo update — dono ek sath upload (sequential nahi) ──
     if (image && image.startsWith("data:")) {
       const publicId = extractCloudinaryPublicId(existing.imageUrl);
-      if (publicId) await deleteCloudinaryImage(publicId);
-      const uploaded = await uploadBase64Image(image, `cards-ai/cards/${user.id}`);
-      imageUrl = uploaded.url;
+      if (publicId) deleteCloudinaryImage(publicId); // background — save ko block nahi karna
     }
+
+    const [imageUrl, resolvedPhotoUrl] = await Promise.all([
+      image && image.startsWith("data:")
+        ? uploadBase64Image(image, `cards-ai/cards/${user.id}`).then((r) => r.url)
+        : Promise.resolve(existing.imageUrl),
+      photoUrl?.startsWith("data:image")
+        ? uploadBase64Image(photoUrl, `cards-ai/user-photos/${user.id}`).then((r) => r.url)
+        : Promise.resolve(photoUrl ?? existing.photoUrl),
+    ]);
 
     const newTemplateId = templateId ?? existing.templateId;
 
@@ -99,7 +104,7 @@ export async function PATCH(
         message:       message        ?? existing.message,
         nameColor:     nameColor      ?? existing.nameColor,
         messageColor:  messageColor   ?? existing.messageColor,
-        photoUrl:      photoUrl       ?? existing.photoUrl,
+        photoUrl:      resolvedPhotoUrl,
         photoTransform: photoTransform ?? existing.photoTransform,
       })
       .where(and(eq(cards.id, cardId), eq(cards.userId, user.id)))
