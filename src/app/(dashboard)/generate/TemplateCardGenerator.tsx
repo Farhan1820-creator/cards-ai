@@ -256,7 +256,7 @@ buttonText = initialIsEditing.current ? "Updated" : "Generated"; // ← isEditin
 }
 
   return (
- <div className="flex flex-col gap-4 h-full overflow-y-auto scrollbar-hide">
+    <div className="flex flex-col gap-4 h-full">
       {/* Preview */}
       <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm flex-1 relative">
         <div className="block">
@@ -294,9 +294,6 @@ overlayConfig={selectedTemplate?.overlayConfig ?? undefined}  // ← add yeh lin
         {buttonText}
       </Button>
 
-     {/* New Card Button */}
-     {(isGenerated || isEditing) && (
-      <>
       <Button
         type="button"
         variant="outline"
@@ -309,7 +306,8 @@ overlayConfig={selectedTemplate?.overlayConfig ?? undefined}  // ← add yeh lin
         New Card
       </Button>
 
-
+     {/* New Card Button */}
+     {(isGenerated || isEditing) && (
   <ActionButtons
     hasPreview={!!finalImage && !isLoading && !isSaving}
     onDownload={handleDownload}
@@ -317,7 +315,6 @@ overlayConfig={selectedTemplate?.overlayConfig ?? undefined}  // ← add yeh lin
     onReset={handleReset}
     onShare={handleShare}
   />
-  </>
 )}
     </div>
   );

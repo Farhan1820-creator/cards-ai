@@ -58,7 +58,7 @@ const TabSteps = memo(function TabSteps({
         const isActive = i === activeIndex;
 
         return (
-          <div key={tab.id} className="flex items-center flex-1 min-w-0">
+          <div key={tab.id} className="flex items-center gap-2 min-w-0">
             <button onClick={() => onTabClick(tab.id)} className="flex flex-col items-center gap-1 flex-shrink-0">
               <div className={`${btnSz} rounded-full flex items-center justify-center border-2 transition-colors duration-200 ${
                 isDone ? "bg-emerald-500 border-emerald-500 text-white"
@@ -151,7 +151,7 @@ const ProgressHeader = memo(function ProgressHeader({
 }) {
   return (
     <div className="border-b">
-      <div className="flex items-center">
+      <div className="flex flex-row sm:flex-col lg:flex-row items-center justify-between">
         <TabSteps tabs={tabs} activeIndex={activeIndex} onTabClick={onTabClick} compact={compact} />
         <NavArrows onPrev={onPrev} onNext={onNext} disablePrev={activeIndex === 0} disableNext={activeIndex === tabs.length - 1} small={compact} />
       </div>
