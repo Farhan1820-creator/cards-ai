@@ -28,7 +28,7 @@ interface TemplateCardGeneratorProps {
   onExistingCardDismiss?: () => void;
   isEditing?: boolean;
   hasChanges?: boolean;
-  onSaved?: (cardId?: string, photoUrl?: string) => void;
+  onSaved?: (cardId?: string) => void;
    photoTransform?: { scale: number; offsetX: number; offsetY: number };
   onTransformChange?: (t: { scale: number; offsetX: number; offsetY: number }) => void;
 }
@@ -65,44 +65,76 @@ const selectedCategoryName =
   categories.find((c) => c.id === selectedCategoryId)?.name ?? "card";
 
   const templateChosen = selectedTemplate !== null;
-const canGenerate = templateChosen;
-
-const MAX_SAVE_BYTES = 5 * 1024 * 1024;
+const canGenerate = templateChosen; 
+ const readyResolver = useRef<((url: string) => void) | null>(null);
 
 const handlePreviewReady = useCallback((dataUrl: string) => {
   setFinalImage(dataUrl);
   latestImageRef.current = dataUrl;
+  readyResolver.current?.(dataUrl);
+  readyResolver.current = null;
 }, []);
+
+const waitForPreview = useCallback(() => {
+  return new Promise<string>((resolve) => {
+    readyResolver.current = resolve;
+    // optional safety timeout, race ke against
+    setTimeout(() => resolve(latestImageRef.current ?? ""), 4000);
+  });
+}, []);
+
+const abortControllerRef = useRef<AbortController | null>(null);
+
+
+
+
+const autoSaveCardRef = useRef<((image: string) => Promise<void>) | null>(null);
 
 const autoSaveCard = useCallback(async (image: string) => {
   if (!selectedTemplate || !image) return;
 
-  const approxBytes = (image.length * 3) / 4;
-  if (approxBytes > MAX_SAVE_BYTES) {
-    toast.warning("Could not save card due to large upload image size. You can still download it.", { duration: 6000 });
-    return;
-  }
+  abortControllerRef.current?.abort();
+  const controller = new AbortController();
+  abortControllerRef.current = controller;
 
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
+const approxBytes = (image.length * 3) / 4;
+const MAX_BYTES = 9 * 1024 * 1024;
+if (approxBytes > MAX_BYTES) {
+  toast.warning("Could not save card due to large upload image size. You can still download it.", { duration: 6000 });
+  return;
+}
   setIsSaving(true);
   try {
     const url = isEditing ? `/api/user/cards/${existingCardId}` : "/api/user/cards/generate/template";
     const method = isEditing ? "PATCH" : "POST";
 
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        image, recipientName, message,
-        nameColor, messageColor, photoUrl,
-        templateId: selectedTemplate.id,
-        categoryId: selectedTemplate.categoryId,
-        photoTransform,
-      }),
-    });
+const res = await fetch(url, {
+  method,
+  headers: { "Content-Type": "application/json" },
+body: JSON.stringify({
+  image, recipientName, message,
+  nameColor, messageColor, photoUrl,
+  templateId: selectedTemplate.id,
+  categoryId: selectedTemplate.categoryId,
+  photoTransform,
+}),
+  signal: controller.signal,
+});
 
-    if (!res.ok) throw new Error("save_failed");
-    const data: { card?: { id?: string; photoUrl?: string | null } } = await res.json();
 
+if (res.status === 413 || res.status === 500) {
+  toast.warning("Could not save card due to large upload image size. You can still download it.", { duration: 6000 });
+  return;
+}
+if (!res.ok) throw new Error("save_failed");
+let data: { card?: { id?: string } } = {};
+try {
+  data = await res.json();
+} catch {
+  toast.warning("Card may not have saved correctly. You can still download it.");
+  return;
+}
     toast.success(
       <span>
         Card saved to{" "}
@@ -111,13 +143,28 @@ const autoSaveCard = useCallback(async (image: string) => {
         </Link>
       </span>
     );
-    onSaved?.(data.card?.id, data.card?.photoUrl ?? undefined);
-  } catch {
-    toast.error("Could not auto-save (you can still download)");
+    onSaved?.(data.card?.id);
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      toast.error("Slow connection — save timed out. Try again?", {
+        // ✅ ref use karo — direct autoSaveCard nahi
+        action: { label: "Retry", onClick: () => autoSaveCardRef.current?.(image) },
+      });
+    } else {
+      toast.error("Could not auto-save (you can still download)");
+    }
   } finally {
+    clearTimeout(timeoutId);
     setIsSaving(false);
   }
-}, [isEditing, existingCardId, selectedTemplate, recipientName, message, nameColor, messageColor, photoUrl, photoTransform, onSaved, MAX_SAVE_BYTES]);
+}, [isEditing, existingCardId, selectedTemplate, recipientName, message, nameColor, messageColor, photoUrl, photoTransform, onSaved]);// ✅ ref ko latest version pe point karo
+useEffect(() => {
+  autoSaveCardRef.current = autoSaveCard;
+}, [autoSaveCard]);
+// component unmount ya navigate away pe pending request cancel
+useEffect(() => {
+  return () => abortControllerRef.current?.abort();
+}, []);
 
 const [pendingGenerate, setPendingGenerate] = useState(false);
 
@@ -257,7 +304,7 @@ overlayConfig={selectedTemplate?.overlayConfig ?? undefined}  // ← add yeh lin
         variant="outline"
         size="lg"
         className="w-full h-10 text-sm font-semibold"
-        disabled={!finalImage || isLoading || isSaving}
+        disabled= {!!finalImage || !isLoading || !isSaving}
         onClick={() => {
           window.location.href = "/generate";
         }}

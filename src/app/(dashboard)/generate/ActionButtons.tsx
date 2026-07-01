@@ -87,7 +87,7 @@ export function ActionButtons({
         Regenerate
       </Button>
 
-      <Button variant="ghost" size="sm" onClick={onReset} disabled={!hasPreview} className="justify-center">
+      <Button variant="ghost" size="sm" onClick={onReset} className="justify-center">
         <RotateCcw className="h-4 w-4" />
         Reset
       </Button>

@@ -205,7 +205,7 @@ const confirmedUrl = useRef<string | null>(null);
       }
 
       if (cancelledRef.current) return;
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+      const dataUrl = canvas.toDataURL("image/png");
       setPreviewUrl(dataUrl);
       onPreviewReady?.(dataUrl);
     } catch (err) {

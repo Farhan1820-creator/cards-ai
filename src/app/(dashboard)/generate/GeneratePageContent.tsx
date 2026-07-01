@@ -295,22 +295,16 @@ useEffect(() => {
   }, []);
 
   const handleCardSaved = useCallback(
-    (savedCardId?: string, savedPhotoUrl?: string) => {
+    (savedCardId?: string) => {
       if (savedCardId && !existingCardId) {
         setExistingCardId(savedCardId);
       }
-      // Base64 photo ab Cloudinary URL se replace ho gayi — agli save/regenerate
-      // pe wahi photo dobara upload nahi hogi.
-      const resolvedPhotoUrl =
-        savedPhotoUrl && savedPhotoUrl.startsWith("http") ? savedPhotoUrl : photoUrl;
-      if (resolvedPhotoUrl !== photoUrl) setPhotoUrl(resolvedPhotoUrl);
-
       initialValuesRef.current = {
         recipientName: tmplRecipientName,
         message: tmplMessage,
         nameColor,
         messageColor,
-        photoUrl: resolvedPhotoUrl,
+        photoUrl,
         templateId: selectedTemplate?.id ?? "",
         photoTransform,
       };
