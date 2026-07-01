@@ -30,7 +30,7 @@ export function ActionButtons({
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-2 w-full lg:grid-cols-[1.3fr_1fr_1fr_1fr] rounded p-2 md:p-4 mb-15 md:mb-0">
+    <div className="grid grid-cols-2 gap-2 w-full lg:grid-cols-[1.3fr_1fr_1fr_1fr] rounded mb-15 md:mb-0">
 
       {/* Download split-button */}
       <div className="flex">
