@@ -3,7 +3,7 @@ import "server-only";
 import { db } from "@/db";
 import { cards, users } from "@/db/schema";
 import { nanoid } from "nanoid";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, and } from "drizzle-orm";
 import {
   deleteCloudinaryImage,
   extractCloudinaryPublicId,
@@ -53,6 +53,16 @@ export async function createCard(data: {
     .returning();
 
   return card;
+}
+
+// ── Ek card jo specific user ka hi ho (ownership check) ─────────
+// GET / DELETE / PATCH teeno routes mein yehi query repeat ho rahi thi
+export async function getOwnedCard(cardId: string, userId: string) {
+  const [card] = await db
+    .select()
+    .from(cards)
+    .where(and(eq(cards.id, cardId), eq(cards.userId, userId)));
+  return card ?? null;
 }
 
 // ── User ke apne cards ────────────────────────────────────────

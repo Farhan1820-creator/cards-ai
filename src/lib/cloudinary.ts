@@ -13,6 +13,15 @@ export class CloudinaryUploadError extends Error {
   }
 }
 
+// ✅ single source of truth for "where does a user's card image live"
+export function cardFolder(userId: string) {
+  return `cards-ai/cards/${userId}`;
+}
+
+export async function uploadCardImage(base64: string, userId: string) {
+  return uploadBase64Image(base64, cardFolder(userId));
+}
+
 export async function uploadBase64Image(base64: string, folder = "cards-ai") {
   if (!base64?.startsWith("data:image")) {
     throw new CloudinaryUploadError("Invalid image data");

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useCanvasCoords } from "@/app/(dashboard)/generate/hooks/useCanvasCoords";
 
 export interface OverlayConfig {
   photo:         { x: number; y: number; r: number };
@@ -30,15 +31,17 @@ function domToCanvas(domX: number, domY: number, scaleX: number, scaleY: number)
 }
 
 export function OverlayConfigurator({ imageUrl, config, onChange }: OverlayConfiguratorProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const imgRef       = useRef<HTMLImageElement | null>(null);
-  const roRef        = useRef<ResizeObserver | null>(null);
-
-  const [imgLoaded,  setImgLoaded]  = useState(false);
-  const [dragging,   setDragging]   = useState<DragTarget>(null);
-  // ── KEY CHANGE: scale state ──────────────────────────────────
-  const [scale, setScale] = useState({ x: 1, y: 1 });
+  const imgRef = useRef<HTMLImageElement | null>(null);
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const [dragging,  setDragging]  = useState<DragTarget>(null);
   const dragOffset = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // ── Same ResizeObserver-based scaling used by TemplatePreview — no reimplementation ──
+  const { ref: canvasRef, scale, containerRef } = useCanvasCoords({
+    canvasW: CANVAS_W,
+    canvasH: CANVAS_H,
+    elements: [],
+  });
 
   // Preload image
   useEffect(() => {
@@ -49,27 +52,6 @@ export function OverlayConfigurator({ imageUrl, config, onChange }: OverlayConfi
     img.onerror     = () => setImgLoaded(false);
     img.src         = imageUrl;
   }, [imageUrl]);
-
-  // ── ResizeObserver — same as useCanvasCoords ─────────────────
-  useEffect(() => {
-    const node = containerRef.current;
-    if (!node) return;
-
-    const update = (w: number, h: number) => {
-      if (w === 0 || h === 0) return;
-      setScale({ x: w / CANVAS_W, y: h / CANVAS_H });
-    };
-
-    const { width, height } = node.getBoundingClientRect();
-    update(width, height);
-
-    roRef.current = new ResizeObserver(([entry]) => {
-      const { width: w, height: h } = entry.contentRect;
-      update(w, h);
-    });
-    roRef.current.observe(node);
-    return () => roRef.current?.disconnect();
-  }, []);
 
   // ── Pointer handlers ─────────────────────────────────────────
   const handlePointerDown = useCallback((e: React.PointerEvent, target: DragTarget) => {
@@ -227,7 +209,7 @@ export function OverlayConfigurator({ imageUrl, config, onChange }: OverlayConfi
       </div>
 
       <div
-        ref={containerRef}
+        ref={canvasRef}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}

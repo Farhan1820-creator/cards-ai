@@ -8,8 +8,7 @@ import { type Template } from "./SidebarPanels/TemplateSidebarPanel/components/T
 import { TemplatePreview } from "./TemplatePreview";
 import { toast } from "sonner";
 import { ActionButtons } from "@/app/(dashboard)/generate/ActionButtons";
-import { generateCardFilename } from "@/lib/filename";
-import { downloadImage } from "@/lib/download-image";
+import { useCardActions } from "@/app/(dashboard)/generate/hooks/useCardActions";
 import Link from "next/link";
 
 interface TemplateCardGeneratorProps {
@@ -195,37 +194,11 @@ useEffect(() => {
   return () => clearTimeout(id);
 }, [pendingGenerate]);
  
- const handleDownload = useCallback((format: "PNG" | "JPEG" | "PDF" = "PNG") => {
-if (!finalImage) return;
-if (format === "PDF") { toast.info("PDF export coming soon!"); return; }
-const filename = generateCardFilename(selectedCategoryName, recipientName);
-const ext = format === "JPEG" ? "jpg" : "png";
-downloadImage(finalImage, `${filename}.${ext}`);
-toast.success(`${format} downloaded!`);
-}, [finalImage, recipientName, selectedCategoryName]);
-
-const handleShare = useCallback(async () => {
-  if (!finalImage) return;
-  try {
-    const res = await fetch(finalImage);
-    const blob = await res.blob();
-    const file = new File(
-      [blob],
-      generateCardFilename(selectedCategoryName, recipientName),
-      { type: "image/png" }
-    );
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ title: "My Card", files: [file] });
-    } else {
-      await navigator.clipboard.writeText(window.location.href);
-      toast.success("Page link copied to clipboard!");
-    }
-  } catch (err) {
-    if (err instanceof Error && err.name !== "AbortError") {
-      toast.error("Share failed");
-    }
-  }
-}, [finalImage, selectedCategoryName, recipientName]);
+const { handleDownload, handleShare } = useCardActions(
+  finalImage,
+  selectedCategoryName,
+  recipientName
+);
 
 
   const handleReset = useCallback(() => {

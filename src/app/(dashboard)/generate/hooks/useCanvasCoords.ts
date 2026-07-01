@@ -22,8 +22,10 @@ interface UseCanvasCoordsOptions {
 }
 
 interface UseCanvasCoordsReturn {
-  ref:        (node: HTMLDivElement | null) => void;
+  ref:         (node: HTMLDivElement | null) => void;
   domElements: Map<string, DOMElement>;
+  scale:       { x: number; y: number };
+  containerRef: { current: HTMLDivElement | null };
 }
 
 export function useCanvasCoords({
@@ -32,13 +34,16 @@ export function useCanvasCoords({
   elements,
 }: UseCanvasCoordsOptions): UseCanvasCoordsReturn {
   const [domElements, setDomElements] = useState<Map<string, DOMElement>>(new Map());
+  const [scale, setScale] = useState({ x: 1, y: 1 });
   const roRef = useRef<ResizeObserver | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   const calculate = useCallback(
     (width: number, height: number) => {
       if (width === 0 || height === 0) return;
       const scaleX = width  / canvasW;
       const scaleY = height / canvasH;
+      setScale({ x: scaleX, y: scaleY });
       const next   = new Map<string, DOMElement>();
       for (const el of elements) {
         const radius = el.r * scaleX;
@@ -59,6 +64,7 @@ export function useCanvasCoords({
     (node: HTMLDivElement | null) => {
       roRef.current?.disconnect();
       roRef.current = null;
+      containerRef.current = node;
 
       if (!node) return;
 
@@ -77,5 +83,5 @@ export function useCanvasCoords({
 
   useEffect(() => () => roRef.current?.disconnect(), []);
 
-  return { ref, domElements };
+  return { ref, domElements, scale, containerRef };
 }

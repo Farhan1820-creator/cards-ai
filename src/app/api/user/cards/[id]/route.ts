@@ -3,32 +3,35 @@ import { requireUser } from "@/lib/require-user";
 import { db } from "@/db";
 import { cards } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
-import { deleteCloudinaryImage, uploadBase64Image } from "@/lib/cloudinary";
-import { extractCloudinaryPublicId } from "@/lib/cloudinary-utils";
+import {
+  deleteCloudinaryImage,
+  uploadCardImage,
+  extractCloudinaryPublicId,
+} from "@/lib/cloudinary";
+import { getOwnedCard } from "@/lib/actions/cards";
 
+export const GET = async (
+  _req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) => {
+  try {
+    const user = await requireUser();
+    const { id: cardId } = await context.params;
 
-export const GET = (
-  async (_req: NextRequest, context: { params: Promise<{ id: string }> }) => {
-    try {
-      const user = await requireUser();
-      const { id: cardId } = await context.params;
-
-      const [card] = await db
-        .select()
-        .from(cards)
-        .where(and(eq(cards.id, cardId), eq(cards.userId, user.id)));
-
-      if (!card) {
-        return NextResponse.json({ error: "Card not found" }, { status: 404 });
-      }
-
-      return NextResponse.json({ card });
-    } catch (error) {
-      console.error("Get card error:", error);
-      return NextResponse.json({ error: "Failed to fetch card" }, { status: 500 });
+    const card = await getOwnedCard(cardId, user.id);
+    if (!card) {
+      return NextResponse.json({ error: "Card not found" }, { status: 404 });
     }
+
+    return NextResponse.json({ card });
+  } catch (error) {
+    console.error("Get card error:", error);
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return NextResponse.json({ error: "Failed to fetch card" }, { status: 500 });
   }
-);
+};
 
 export async function DELETE(
   _req: NextRequest,
@@ -38,11 +41,7 @@ export async function DELETE(
     const user = await requireUser();
     const { id: cardId } = await context.params;
 
-    const [card] = await db
-      .select()
-      .from(cards)
-      .where(and(eq(cards.id, cardId), eq(cards.userId, user.id)));
-
+    const card = await getOwnedCard(cardId, user.id);
     if (!card) return NextResponse.json({ success: false }, { status: 404 });
 
     const publicId = extractCloudinaryPublicId(card.imageUrl);
@@ -68,11 +67,7 @@ export async function PATCH(
     const user = await requireUser();
     const { id: cardId } = await context.params;
 
-    const [existing] = await db
-      .select()
-      .from(cards)
-      .where(and(eq(cards.id, cardId), eq(cards.userId, user.id)));
-
+    const existing = await getOwnedCard(cardId, user.id);
     if (!existing) return NextResponse.json({ success: false }, { status: 404 });
 
     const body = await req.json();
@@ -83,7 +78,7 @@ export async function PATCH(
     if (image && image.startsWith("data:")) {
       const publicId = extractCloudinaryPublicId(existing.imageUrl);
       if (publicId) await deleteCloudinaryImage(publicId);
-      const uploaded = await uploadBase64Image(image, `cards-ai/cards/${user.id}`);
+      const uploaded = await uploadCardImage(image, user.id);
       imageUrl = uploaded.url;
     }
 

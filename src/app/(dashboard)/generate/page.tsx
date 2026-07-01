@@ -26,8 +26,7 @@ import { TemplateCardGenerator } from "@/app/(dashboard)/generate/TemplateCardGe
 import { CardPreview } from "@/app/(dashboard)/generate/CardPreview";
 import { ActionButtons } from "@/app/(dashboard)/generate/ActionButtons";
 
-import { downloadImage } from "@/lib/download-image";
-import { generateCardFilename } from "@/lib/filename";
+import { useCardActions } from "@/app/(dashboard)/generate/hooks/useCardActions";
 
 const DEFAULT_PRIMARY   = "#6D28D9";
 const DEFAULT_SECONDARY = "#EC4899";
@@ -339,24 +338,11 @@ function GeneratePageContent() {
     }
   };
 
-  const handleAiDownload = (format: "PNG" | "JPEG" | "PDF") => {
-    if (!previewUrl) return;
-    const filename = generateCardFilename(aiCardType, aiRecipientName);
-    if (format === "PDF") { toast.info("PDF export coming soon!"); return; }
-    const ext = format === "JPEG" ? "jpg" : "png";
-    downloadImage(previewUrl, `${filename}.${ext}`);
-    toast.success(`${format} downloaded!`);
-  };
-
-  const handleShare = async () => {
-    if (!previewUrl) return;
-    if (navigator.share) {
-      try { await navigator.share({ title: "My Card", url: previewUrl }); } catch {}
-    } else {
-      await navigator.clipboard.writeText(previewUrl);
-      toast.success("Link copied to clipboard!");
-    }
-  };
+  const { handleDownload: handleAiDownload, handleShare } = useCardActions(
+    previewUrl,
+    aiCardType,
+    aiRecipientName
+  );
 
   const handleAiRegenerate = () => handleAiGenerate();
 

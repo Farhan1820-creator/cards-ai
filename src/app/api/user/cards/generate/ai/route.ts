@@ -3,7 +3,7 @@ import { composeImagePrompt } from "@/lib/prompt-composer";
 import { generateImage } from "@/lib/huggingface";
 import { createCard } from "@/lib/actions/cards";
 import { requireUser } from "@/lib/require-user";
-import { uploadBase64Image } from "@/lib/cloudinary";
+import { uploadCardImage } from "@/lib/cloudinary";
 
 export async function POST(request: NextRequest) {
     try {
@@ -49,8 +49,8 @@ export async function POST(request: NextRequest) {
         // Generate the image using Huggingface
         const base64Image = await generateImage(finalPrompt);
 
-        // Upload the image to Cloudinary
-        const uploadResponse = await uploadBase64Image(base64Image);
+        // Upload the image to Cloudinary (same folder convention as every other card upload)
+        const uploadResponse = await uploadCardImage(base64Image, user.id);
         const imageUrl = uploadResponse.url;
         
         // Save the card details in the database
