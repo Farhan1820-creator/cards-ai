@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireUser } from "@/lib/require-user";
+import { requireUserApi } from "@/lib/api-auth";
 import { db } from "@/db";
 import { cards } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
@@ -15,7 +15,9 @@ export const GET = async (
   context: { params: Promise<{ id: string }> }
 ) => {
   try {
-    const user = await requireUser();
+    const { user, error: authError } = await requireUserApi();
+    if (authError) return authError;
+
     const { id: cardId } = await context.params;
 
     const card = await getOwnedCard(cardId, user.id);
@@ -26,9 +28,6 @@ export const GET = async (
     return NextResponse.json({ card });
   } catch (error) {
     console.error("Get card error:", error);
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
     return NextResponse.json({ error: "Failed to fetch card" }, { status: 500 });
   }
 };
@@ -38,7 +37,9 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await requireUser();
+    const { user, error: authError } = await requireUserApi();
+    if (authError) return authError;
+
     const { id: cardId } = await context.params;
 
     const card = await getOwnedCard(cardId, user.id);
@@ -52,9 +53,6 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Delete card error:", error);
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
-    }
     return NextResponse.json({ success: false, error: "Failed to delete card" }, { status: 500 });
   }
 }
@@ -64,7 +62,9 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await requireUser();
+    const { user, error: authError } = await requireUserApi();
+    if (authError) return authError;
+
     const { id: cardId } = await context.params;
 
     const existing = await getOwnedCard(cardId, user.id);
@@ -103,9 +103,6 @@ export async function PATCH(
     return NextResponse.json({ success: true, card: updated });
   } catch (error) {
     console.error("Edit card error:", error);
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
-    }
     return NextResponse.json({ success: false, error: "Failed to update card" }, { status: 500 });
   }
 }
