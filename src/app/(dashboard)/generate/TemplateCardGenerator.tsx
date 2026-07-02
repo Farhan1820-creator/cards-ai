@@ -9,7 +9,6 @@ import { TemplatePreview } from "./TemplatePreview";
 import { toast } from "sonner";
 import { ActionButtons } from "@/app/(dashboard)/generate/ActionButtons";
 import { useCardActions } from "@/app/(dashboard)/generate/hooks/useCardActions";
-import Link from "next/link";
 
 interface TemplateCardGeneratorProps {
   categories: Category[];
@@ -73,13 +72,7 @@ const handlePreviewReady = useCallback((dataUrl: string) => {
   readyResolver.current = null;
 }, []);
 
-const waitForPreview = useCallback(() => {
-  return new Promise<string>((resolve) => {
-    readyResolver.current = resolve;
-    // optional safety timeout, race ke against
-    setTimeout(() => resolve(latestImageRef.current ?? ""), 4000);
-  });
-}, []);
+
 
 const abortControllerRef = useRef<AbortController | null>(null);
 
