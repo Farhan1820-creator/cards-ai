@@ -70,7 +70,7 @@ export function OverlayConfigurator({ imageUrl, config, onChange }: OverlayConfi
     dragOffset.current = { x: cv.x - anchorX, y: cv.y - anchorY };
     setDragging(target);
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-  }, [config, scale, containerRef]);
+  }, [config, scale]);
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     if (!dragging) return;
@@ -90,7 +90,7 @@ export function OverlayConfigurator({ imageUrl, config, onChange }: OverlayConfi
       onChange({ ...config, recipientName: { ...config.recipientName, x: cx, y: cy } });
     else if (dragging === "message")
       onChange({ ...config, message: { ...config.message, x: cx, y: cy } });
-  }, [dragging, config, onChange, scale, containerRef]);
+  }, [dragging, config, onChange, scale]);
 
   const handlePointerUp = useCallback(() => setDragging(null), []);
 

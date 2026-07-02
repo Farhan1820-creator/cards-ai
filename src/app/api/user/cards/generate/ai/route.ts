@@ -2,14 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { composeImagePrompt } from "@/lib/prompt-composer";
 import { generateImage } from "@/lib/huggingface";
 import { createCard } from "@/lib/actions/cards";
-import { requireUserApi } from "@/lib/api-auth";
+import { requireUser } from "@/lib/require-user";
 import { uploadCardImage } from "@/lib/cloudinary";
 
 export async function POST(request: NextRequest) {
     try {
-        const { user, error } = await requireUserApi();
-        if (error) return error;
-
+        const user = await requireUser();
         const body = await request.json();
         const {
             cardType,
