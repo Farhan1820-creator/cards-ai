@@ -205,7 +205,9 @@ const confirmedUrl = useRef<string | null>(null);
       }
 
       if (cancelledRef.current) return;
-      const dataUrl = canvas.toDataURL("image/png");
+      // JPEG quality 0.92 instead of lossless PNG — cuts payload size massively
+      // for photographic cards, keeping upload fast on real-world networks
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
       setPreviewUrl(dataUrl);
       onPreviewReady?.(dataUrl);
     } catch (err) {

@@ -203,7 +203,7 @@ export function DashboardSidebar({ user }: { user: SidebarUser }) {
       */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-white shadow-[0_-2px_12px_rgba(0,0,0,0.06)]">
         <div className="flex overflow-x-auto no-scrollbar px-1 py-2 gap-1">
-          {mobileItems.map((item) => {
+          {mobileItems.map((item, index) => {
             if (item.type === "account") {
               return (
                 <button

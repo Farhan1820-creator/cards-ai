@@ -22,7 +22,9 @@ export function useCardActions(
         return;
       }
       const filename = generateCardFilename(cardType, recipientName);
-      const ext = format === "JPEG" ? "jpg" : "png";
+      // Extension follows the actual image data (always JPEG from canvas export),
+      // not the button label — avoids a mismatched .png on JPEG bytes.
+      const ext = image.startsWith("data:image/png") ? "png" : "jpg";
       downloadImage(image, `${filename}.${ext}`);
       toast.success(`${format} downloaded!`);
     },

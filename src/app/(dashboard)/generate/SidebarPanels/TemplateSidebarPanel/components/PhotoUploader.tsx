@@ -33,6 +33,38 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
+// A raw phone photo (5-10MB) becomes ~33% bigger as base64 — over a POST body
+// that also carries the composited card, this is what was making uploads
+// hang/timeout on real networks (fine on localhost's zero-latency loopback).
+// Resize to a sane max dimension + re-encode as JPEG before it ever hits state.
+const MAX_DIMENSION = 1600;
+const JPEG_QUALITY = 0.85;
+
+function compressImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const img = new window.Image();
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      let { width, height } = img;
+      if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+        const scale = MAX_DIMENSION / Math.max(width, height);
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { reject(new Error("canvas_unavailable")); return; }
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL("image/jpeg", JPEG_QUALITY));
+    };
+    img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error("read_failed")); };
+    img.src = objectUrl;
+  });
+}
+
 export function PhotoUploader({ photoUrl, onPhotoChange }: PhotoUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [fileInfo, setFileInfo] = useState<FileInfo | null>(null);
@@ -53,7 +85,7 @@ export function PhotoUploader({ photoUrl, onPhotoChange }: PhotoUploaderProps) {
 
     setIsProcessing(true);
     try {
-      const base64 = await fileToBase64(file);
+      const base64 = await compressImage(file).catch(() => fileToBase64(file));
       onPhotoChange(base64);
       setFileInfo({ name: file.name, size: formatSize(file.size) });
     } catch {
