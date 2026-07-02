@@ -56,7 +56,6 @@ export function TemplateCardGenerator({
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerated, setIsGenerated] = useState(false);
   const [finalImage, setFinalImage] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
   const initialIsEditing = useRef(isEditing);
 
   const latestImageRef = useRef<string | null>(null);
@@ -97,66 +96,42 @@ const autoSaveCard = useCallback(async (image: string) => {
   abortControllerRef.current = controller;
 
   const timeoutId = setTimeout(() => controller.abort(), 15000);
-const approxBytes = (image.length * 3) / 4;
-const MAX_BYTES = 9 * 1024 * 1024;
-if (approxBytes > MAX_BYTES) {
-  toast.warning("Could not save card due to large upload image size. You can still download it.", { duration: 6000 });
-  return;
-}
-  setIsSaving(true);
+  const approxBytes = (image.length * 3) / 4;
+  const MAX_BYTES = 9 * 1024 * 1024;
+  if (approxBytes > MAX_BYTES) {
+    // Silent — preview + download already work locally, background save just skipped
+    console.warn("Auto-save skipped: image too large");
+    clearTimeout(timeoutId);
+    return;
+  }
   try {
     const url = isEditing ? `/api/user/cards/${existingCardId}` : "/api/user/cards/generate/template";
     const method = isEditing ? "PATCH" : "POST";
 
-const res = await fetch(url, {
-  method,
-  headers: { "Content-Type": "application/json" },
-body: JSON.stringify({
-  image, recipientName, message,
-  nameColor, messageColor, photoUrl,
-  templateId: selectedTemplate.id,
-  categoryId: selectedTemplate.categoryId,
-  photoTransform,
-}),
-  signal: controller.signal,
-});
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        image, recipientName, message,
+        nameColor, messageColor, photoUrl,
+        templateId: selectedTemplate.id,
+        categoryId: selectedTemplate.categoryId,
+        photoTransform,
+      }),
+      signal: controller.signal,
+    });
 
+    if (!res.ok) throw new Error(`save_failed_${res.status}`);
 
-if (res.status === 413 || res.status === 500) {
-  toast.warning("Could not save card due to large upload image size. You can still download it.", { duration: 6000 });
-  return;
-}
-if (!res.ok) throw new Error("save_failed");
-let data: { card?: { id?: string } } = {};
-try {
-  data = await res.json();
-} catch {
-  toast.warning("Card may not have saved correctly. You can still download it.");
-  return;
-}
-    toast.success(
-      <span>
-        Card saved to{" "}
-        <Link href="/my-cards" className="underline underline-offset-2 font-semibold text-blue-400">
-          My Cards
-        </Link>
-      </span>
-    );
+    const data: { card?: { id?: string } } = await res.json().catch(() => ({}));
     onSaved?.(data.card?.id);
   } catch (err) {
-    if (err instanceof Error && err.name === "AbortError") {
-      toast.error("Slow connection — save timed out. Try again?", {
-        // ✅ ref use karo — direct autoSaveCard nahi
-        action: { label: "Retry", onClick: () => autoSaveCardRef.current?.(image) },
-      });
-    } else {
-      toast.error("Could not auto-save (you can still download)");
-    }
+    // Silent by design — fast UX, no toast. Logged for debugging only.
+    console.error("Background auto-save failed:", err);
   } finally {
     clearTimeout(timeoutId);
-    setIsSaving(false);
   }
-}, [isEditing, existingCardId, selectedTemplate, recipientName, message, nameColor, messageColor, photoUrl, photoTransform, onSaved]);// ✅ ref ko latest version pe point karo
+}, [isEditing, existingCardId, selectedTemplate, recipientName, message, nameColor, messageColor, photoUrl, photoTransform, onSaved]);
 useEffect(() => {
   autoSaveCardRef.current = autoSaveCard;
 }, [autoSaveCard]);
@@ -174,13 +149,15 @@ const handleGenerate = useCallback(() => {
   setPendingGenerate(true);   // bas flag set karo, baaki effect sambhalega
 }, [canGenerate, isLoading]);
 
-// Jab bhi preview ready ho aur generate pending ho, auto-save karo
+// Jab bhi preview ready ho: turant show karo, isLoading turant false —
+// auto-save background mein chalta rahega (fire-and-forget), UI uska wait nahi karti
 useEffect(() => {
   if (!pendingGenerate || !finalImage) return;
 
   setPendingGenerate(false);
   setIsGenerated(true);
-  autoSaveCard(finalImage).finally(() => setIsLoading(false));
+  setIsLoading(false);           // ← instant preview, save ka wait nahi
+  autoSaveCard(finalImage);      // background save, fire-and-forget
 }, [pendingGenerate, finalImage, autoSaveCard]);
 
 // Safety: agar preview kabhi ready hi na ho to user stuck na rahe
@@ -209,14 +186,12 @@ const { handleDownload, handleShare } = useCardActions(
     toast.info("Form reset");
   }, [onReset]);
 
-  // ✅ Clean Button Text aur Disabled State Logic (No duplicates)
+  // ✅ Button reflects generate state only — background autosave never blocks/labels UI
   let buttonText = isEditing ? "Update Card" : "Generate Card";
-let isButtonDisabled = !canGenerate || isLoading || isSaving;
+let isButtonDisabled = !canGenerate || isLoading;
 
 if (isLoading) {
   buttonText = isEditing ? "Updating…" : "Creating…";
-} else if (isSaving) {
-  buttonText = "Saving…";
 } else if (isGenerated && hasChanges) {
   // saved ho chuka lekin user ne changes kiye → re-enable
   buttonText = "Update Card";
@@ -259,7 +234,7 @@ overlayConfig={selectedTemplate?.overlayConfig ?? undefined}  // ← add yeh lin
         onClick={handleGenerate}
         disabled={isButtonDisabled}
       >
-        {isLoading || isSaving ? (
+        {isLoading ? (
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
         ) : (isGenerated && !hasChanges) ? (
           <Check className="mr-2 h-4 w-4" />
@@ -277,7 +252,7 @@ overlayConfig={selectedTemplate?.overlayConfig ?? undefined}  // ← add yeh lin
         variant="outline"
         size="lg"
         className="w-full h-10 text-sm font-semibold"
-        disabled= {!!finalImage || !isLoading || !isSaving}
+        disabled={!finalImage || isLoading}
         onClick={() => {
           window.location.href = "/generate";
         }}
@@ -286,7 +261,7 @@ overlayConfig={selectedTemplate?.overlayConfig ?? undefined}  // ← add yeh lin
       </Button>
 
   <ActionButtons
-    hasPreview={!!finalImage && !isLoading && !isSaving}
+    hasPreview={!!finalImage && !isLoading}
     onDownload={handleDownload}
     onRegenerate={handleGenerate}
     onReset={handleReset}
